@@ -1,0 +1,54 @@
+#!/bin/bash
+### Name of run and output files
+#PBS -N Walicxe3D
+#PBS -e Walicxe3D.err
+#PBS -o Walicxe3D.out
+
+###PBS -m aeb
+###PBS -M EMAIL_HERE 
+
+### Queue name and number of nodes:processors per node
+#PBS -q default
+#PBS -r n
+#PBS -l nodes=1:new:ppn=12
+
+### Set environment variables for mpi.
+export PATH=/usr/mpi/intel/mvapich2-1.8/bin:/usr/local/bin:${PATH}
+export MPD_BIN=/usr/local/bin:
+### Set the execution directory. This directory MUST exist on each node.
+WORKDIR=""
+### EXEPATH is the directory where your executable resides
+EXEPATH=""
+### EXE is the name of your executable (compiled mpi program) 
+EXE="Walicxe3D"
+### ARGS is optional. If you don't need it simply leave it empty
+ARGS=""
+### ARGS is also optional.
+INFILE=""
+
+### ---------------------------------------
+### BEGINNING OF EXECUTION
+### ---------------------------------------
+export NPROCS=`wc -l $PBS_NODEFILE |gawk '//{print $1}'`
+export TMP_MACHINES="$WORKDIR/tmp-machines-file.out"
+cat $PBS_NODEFILE | uniq > $TMP_MACHINES
+NP_MPD=`wc -l $TMP_MACHINES |gawk '//{print $1}'`
+echo The master node of this job is `hostname`
+echo The working directory is `echo $PBS_O_WORKDIR`
+echo The node file is $PBS_NODEFILE
+echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+echo This job runs on the following nodes:
+echo `cat $PBS_NODEFILE`
+echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+echo This job has allocated $NPROCS nodes
+echo "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-"
+echo
+### end of information preample
+
+### Ready... Simply discard $ARGS and $INFILE if you don't need them
+echo  mpdboot -n $NP_MPD -v --file=$TMP_MACHINES
+echo  mpiexec -n $NPROCS $EXEPATH$EXE $ARGS $INFILE
+mpdboot -n $NP_MPD -v --file=$TMP_MACHINES
+mpiexec -n $NPROCS $EXEPATH$EXE $ARGS $INFILE
+mpdallexit
+rm -f $TMP_MACHINES

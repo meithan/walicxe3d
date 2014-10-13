@@ -1,0 +1,12 @@
+/**
+@mainpage Walicxe3D Documentation 
+
+@section Introduction
+
+ Documentation for the Walicxe3D code.
+
+@section Some Other Stuff
+
+ More stuff.
+
+*/
