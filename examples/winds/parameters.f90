@@ -56,7 +56,7 @@ module parameters
   character(*), parameter :: warm_file = ""
 
   !> Number of MPI processes to launch
-  integer, parameter :: nProcs =  
+  integer, parameter :: nProcs = 
 
   !> Available memory (RAM) *per process*, in MB
   ! This will determine the number of blocks allocated by the code
@@ -162,12 +162,12 @@ module parameters
   !> Write outputs using physical or code units?
   !! Currently recognized options:
   !!  CODE_UNITS: output in code (scaled) units
-  !!  PHYS_UNITS: output in de-scaled physical units
+  !!  PHYS_UNITS: output in physical (CGS) units
   integer, parameter :: units_type = CODE_UNITS
 
   ! Data directory and file templates
   ! In these file templates, the sequence XXX will be substituted by
-  ! the processor number, while the sequence YYYY will be substituted by
+  ! the process number, while the sequence YYYY will be substituted by
   ! the output number. A file extension will be appended automatically
   ! depending on the selected format and should not be given here.
   !> Path to data directory
@@ -179,10 +179,10 @@ module parameters
   !> Filename template for State files
   character(*), parameter :: statetpl  = "State.YYYY"
   
-  !> Log everything output to stdout in a logfile?
+  !> Send everything output to stdout to a logfile?
   logical, parameter :: logged = .true.
   !> Directory for logfiles (may be data directory)
-  character(*), parameter :: logdir = "./log/"
+  character(*), parameter :: logdir = datadir
 
   ! ============================================
   ! Solver parameters
@@ -210,11 +210,9 @@ module parameters
   !> Number of ghost cells (equal to order of solver)
   integer, parameter :: nghost = 2
 
-  !> Number of hydro equations (conserved vars)
-  integer, parameter :: neqhydro = 5
-
   !> Number of extra passive scalars
-  integer, parameter :: npassive = 1
+  ! At least one is needed if metallicity-dependent cooling is to be used
+  integer, parameter :: npassive = 0
 
   !> Courant-Friedrichs-Lewis parameter (0 < CFL < 1.0)
   real, parameter :: CFL = 0.4
@@ -226,21 +224,23 @@ module parameters
   ! Radiative Cooling
   ! ============================================
 
-  ! Cooling Type
+
+  !> Radiative cooling Type
   ! Currently recognized options:
   !  COOL_NONE: no radiative cooling
-  !  COOL_TABLE: tabulated cooling function 
+  !  COOL_TABLE: tabulated cooling function (temperature only)
+  !  COOL_TABLE_METAL: tabulated cooling function (temperature and metallicity)
   integer, parameter :: cooling_type = COOL_NONE
 
   !> Filename with table of cooling coefficients
   ! Some cooling tables are provided in the cooling/ subdirectory.
-  character(*), parameter :: cooling_file = ""
+  character(*), parameter :: cooling_file = "./cooling/CHIANTIMazotta.dat"
 
-  ! Maximum *fractional* thermal energy loss allowed in a single cell
-  ! per timestep. This helps prevent negative pressure errors.
-  real, parameter :: cooling_limit = 0.2
+  !> Maximum *fractional* thermal energy loss allowed in a single cell
+  !! per timestep.
+  ! This helps prevent negative pressure errors.
+  real, parameter :: cooling_limit = 0.5
 
-  ! ============================================
   ! ISM (base flow) Properties
   ! ============================================
 
@@ -258,7 +258,7 @@ module parameters
   ! ISM (base flow) parameters -- all in cgs
   !> ISM mean atomic mass per particle (amu)
   real, parameter :: ism_mu0  = mu0
-  !> ISM gas density (g/cm^3)
+  !> ISM mass density (g/cm^3)
   real, parameter :: ism_dens = 1.0 * ism_mu0 * AMU
   !> ISM temperature (K)
   real, parameter :: ism_temp = 100
@@ -268,6 +268,8 @@ module parameters
   real, parameter :: ism_vy = 0.0
   !> ISM z-velocity (cm/s)
   real, parameter :: ism_vz = -125 * KPS
+  !> ISM metallicity (ignored if cooling type is not COOL_TABLE_METAL)
+  real, parameter :: ism_metal = 1.0
 
   ! Magnetic field (only needed when passive magnetic field is enabled)
   ! All values given in gauss
@@ -283,11 +285,9 @@ module parameters
 
   ! Unit scaling factors for length, density and velocity.
   ! These are conversion factors between physical (CGS) and code units,
-  ! defined by:
-  !   1 code unit = ? physical units
-  ! so that, e.g., 
-  !   phys_units = code_units * scaling_factor
-  ! All other unit conversions are derived from these three
+  ! which state the physical unit equivalent of 1 code unit, so that:
+  !   physical units = code_units * scaling_factor
+  ! All other unit conversions are derived from these three.
   real, parameter :: l_sc = 1.0*PC          !< length scale (cm)
   real, parameter :: d_sc = 1.0*mu0*AMU     !< density scale (g cm^-3)
   real, parameter :: v_sc = 1.0e5           !< velocity scale (cm s^-1)
@@ -305,6 +305,9 @@ module parameters
   !                                                                            !
   ! ========================================================================== !
 
+  !> Number of hydro equations
+  integer, parameter :: neqhydro = 5
+
   !> Number of mhd equations
 #ifdef PASBP
   integer, parameter :: neqmhd = 3
@@ -312,12 +315,16 @@ module parameters
   integer, parameter :: neqmhd = 0
 #endif
 
-  !> Number of equations to integrate
-  !! (hydro variables + mhd variables + extra passive scalars)
+  !> Passive scalar index used for metallicity
+  ! Only applicable for COOL_TABLE_METAL cooling
+  integer, parameter :: metalpas = neqhydro + neqmhd + min(npassive,1)
+
+  !> Total number of equations to integrate
+  !! (hydro variables + mhd variables + passive scalars)
   integer, parameter :: neqtot = neqhydro + neqmhd + npassive
 
-  !> First passive variable position  
-  integer, parameter :: firstpas = neqhydro + neqmhd + 1 
+  !> First passive scalar index  
+  integer, parameter :: firstpas = neqhydro + neqmhd + 1
 
   !> Number of bytes per real
 #ifdef DOUBLEP
@@ -355,7 +362,7 @@ module parameters
   integer, parameter :: nzmin = 1-nghost          !< Data array bound, z low
   integer, parameter :: nzmax = ncells_z+nghost   !< Data array bound, z high
 
-  ! Set floating point precision for reals in MPI messages
+  !> Floating point precision for reals in MPI messages
 #ifdef MPIP
 #ifdef DOUBLEP
   integer, parameter :: mpi_real_kind = MPI_DOUBLE_PRECISION
@@ -364,8 +371,8 @@ module parameters
 #endif
 #endif
 
-  ! Calorific capacity at constant volume
-  real, parameter :: cv = 1.0/(gamma-1.0)
+  !> Heat capacity at constant volume
+  real, parameter :: CV = 1.0/(gamma-1.0)
 
   !> Rank of master process
   integer, parameter :: master = 0

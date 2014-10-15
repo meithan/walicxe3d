@@ -139,10 +139,14 @@ module globals
   real, allocatable :: dy(:)     !< Grid spacings along Y (for every level)
   real, allocatable :: dz(:)     !< Grid spacings along Z (for every level)  
 
-  !> @brief Radiative Cooling
-  real, allocatable :: cooldata(:,:)
-  integer :: coolpts
-  real :: cool_Tmin, cool_Tmax
+  !> @brief Radiative cooling coefficients table
+  real, allocatable :: cooltable(:,:)
+  integer :: nptsT      !< Number of temperature data points
+  integer :: nptsZ      !< Number of metallicity data points (if applicable)
+  real :: cool_Tmin     !< Minimum temperature in table
+  real :: cool_Tmax     !< Maximum temperature in table
+  real :: cool_Zmin     !< Minimum metallicity in table (if applicable)
+  real :: cool_Zmax     !< Maximum metallicity in table (if applicable)
 
   ! List of timing marks
   ! 1: Initialization: big array allocation and main initializations

@@ -35,7 +35,7 @@ subroutine initmain ()
 
   integer :: nps, istat, inext
   integer :: mark, l
-  logical :: ex, success
+  logical :: existing, success
   real :: totalsize
   character(3) :: rankstr
   character(1) :: slash
@@ -80,11 +80,11 @@ subroutine initmain ()
     success = .false.
     inext = 1
     do while(.not.success)
-      inquire (file=logfile, exist=ex) 
-      if (ex) then
+      inquire (file=logfile, exist=existing) 
+      if (existing) then
         ! file exists - append a number, try again
-        write(logfile,'(a,a,a,a,i0,a)') logdir // slash, "rank", rankstr, &
-          "-", inext, ".log"
+        write(logfile,'(a,a,a,a,i0,a)') trim(logdir) // trim(slash), &
+          "rank", rankstr, "-", inext, ".log"
         inext = inext + 1
       else
         ! Open logfile
@@ -273,9 +273,18 @@ subroutine initmain ()
     write(logu,'(1x,a)') "> Radiative cooling is OFF"  
   else
     write(logu,'(1x,a)') "> Radiative cooling is ON"
+    write(logu,'(2x,a,a)') "Cooling Table: ", trim(cooling_file)
     if (cooling_type.eq.COOL_TABLE) then
-      write(logu,'(2x,a,a)') "Cooling Table: ", trim(cooling_file)
       call loadcooldata ()
+    else if (cooling_type.eq.COOL_TABLE_METAL) then
+      if (npassive.lt.1) then
+        write(logu,'(1x,a)') "At least one passive scalar is needed for &
+          &metallicity dependent cooling!"
+        write(logu,'(1x,a)') "Set npassive to at least 1 in parameters.f90"
+        write(logu,'(1x,a)') "***ABORTING***"
+        call clean_abort(ERROR_NOT_ENOUGH_PASSIVES)
+      end if
+      call loadcooldata_metal ()
     end if
   end if
 

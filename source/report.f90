@@ -47,8 +47,6 @@ subroutine main_report ()
   write(logu,*) "============================================"
   write(logu,'(1x,a,i0,a,a,a,a,a,i0,a,i0)') "it ", it, "; t= ", &
     trim(timestr), "; dt=", trim(dtstr), "; blocks=", nbLocal, "/", nbActive
-  write(logu,'(1x,a,i0,a,a,a,a,a,i0,a,i0)') "it ", it, "; t= ", &
-    trim(timestr), "; dt=", trim(dtstr), "; blocks=", nbLocal, "/", nbActive
   write(logu,*) "============================================"
   write(logu,*) ""
 

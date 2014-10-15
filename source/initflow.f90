@@ -110,11 +110,13 @@ subroutine uniformIC ()
 
             ! Initialize passive scalars, if any
             if (npassive.ge.1) then
-              primit(firstpas:neqtot) = 0.0    ! passive scalars
+              primit(firstpas:neqtot) = 0.0
             end if
 
-            ! Hack: Passive flag for ISM gas
-!              primit(firstpas) = primit(1)*(-1)
+            ! Passive scalar for metalicity, for COOL_TABLE_METAL
+            if (cooling_type.eq.COOL_TABLE_METAL) then
+              primit(metalpas) = ism_metal*primit(1)
+            end if
 
             ! Convert primitives and set flow vars for this cell
             call prim2flow (primit, uvars)

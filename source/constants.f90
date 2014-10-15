@@ -91,8 +91,9 @@ module constants
   integer, parameter :: LIMITER_SUPERBEE = 6   !< Superbee limiter
 
   ! Cooling algorithms
-  integer, parameter :: COOL_NONE = 0     !< No radiative cooling
-  integer, parameter :: COOL_TABLE = 1    !< Cooling table
+  integer, parameter :: COOL_NONE = 0      !< No radiative cooling
+  integer, parameter :: COOL_TABLE = 1     !< Tabulated cooling, Lambda(T)
+  integer, parameter :: COOL_TABLE_METAL = 2  !< Tabulated cooling, Lambda(T,Z)
 
   ! Output concurrency types
   integer, parameter :: OUT_SIMULT = 0
@@ -143,6 +144,7 @@ module constants
   integer, parameter :: ERROR_DIVISION_BY_ZERO = 23
   integer, parameter :: ERROR_TIMESTEP = 24
   integer, parameter :: ERROR_BAD_OUTPUT_MODE = 25
+  integer, parameter :: ERROR_NOT_ENOUGH_PASSIVES = 26
 
 contains
 

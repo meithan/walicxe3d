@@ -156,11 +156,7 @@ contains
     snr1%mass = 4*MSUN
     snr1%energy = 1E51
     snr1%chi = 0.5
-    snr1%bx = 0.0
-    snr1%by = 0.0
-    snr1%bz = 0.0
     snr1%time = 0.0
-    snr1%armed = .true.
 
     ! Parameters of the second SNR
     snr2%xc = 5.0*PC
@@ -170,11 +166,7 @@ contains
     snr2%mass = 1.4*MSUN
     snr2%energy = 1E51
     snr2%chi = 0.5
-    snr2%bx = 0.0
-    snr2%by = 0.0
-    snr2%bz = 0.0
     snr2%time = 0.0
-    snr2%armed = .true.
 
     ! Parameters of a third SNR, to be detonated at 500 yr
     snr3%xc = 5.0*PC
@@ -184,11 +176,7 @@ contains
     snr3%mass = 1.4*MSUN
     snr3%energy = 1E51
     snr3%chi = 0.5
-    snr3%bx = 0.0
-    snr3%by = 0.0
-    snr3%bz = 0.0
     snr3%time = 500*YR
-    snr3%armed = .true.
 
     ! The first two remnants are detonated as initial conditions
     call detonateSNR(snr1, uvars)

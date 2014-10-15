@@ -245,7 +245,7 @@ subroutine write3DVTKBlocks (noutput)
   real :: xb, yb, zb
   real(kind=4) :: xx, yy, zz
   integer :: a, b, c, i, j, k, l, p, unitout, bID, pID, istat, nblocks
-  integer :: nb, ncells, npoints, lvl, pas
+  integer :: nb, ncells, npoints, lvl, pas, pas0
   integer :: counter
 !  real :: nextrep
 
@@ -624,8 +624,37 @@ subroutine write3DVTKBlocks (noutput)
 !    end do
 !    write(unitout) lf   
 
-  ! Passive scalars
-  do pas=1,npassive
+  ! Metallicity
+  if (cooling_type.eq.COOL_TABLE_METAL) then
+    write(logu,'(1x,a)') "Writing metallicity values ..."
+    write(cbuffer,'(a)') "SCALARS Z float 1"
+    write(unitout) trim(cbuffer), lf
+    write(cbuffer,'(a)') "LOOKUP_TABLE default"
+    write(unitout) trim(cbuffer), lf
+    do nb=1,nbMaxProc
+      bID = localBlocks(nb)
+      if (bID.ne.-1) then
+        do k=1,ncells_y
+          do j=1,ncells_y
+            do i=1,ncells_x
+              bID = localBlocks(nb)
+              xx = real( PRIM(nb,metalpas,i,j,k)/PRIM(nb,1,i,j,k), 4)
+              write(unitout) xx
+            end do
+          end do
+        end do
+      end if
+    end do
+    write(unitout) lf
+  end if
+
+  ! Passive scalars -- except metallicity
+  if (cooling_type.eq.COOL_TABLE_METAL) then
+    pas0 = 2
+  else
+    pas0 = 1
+  end if
+  do pas=pas0,npassive
     write(logu,'(1x,a,i0,a)') "Writing Passive Scalar ", pas, " values ..."
     write(cbuffer,'(a,i0,a)') "SCALARS passive", pas, " float 1"
     write(unitout) trim(cbuffer), lf
@@ -638,11 +667,7 @@ subroutine write3DVTKBlocks (noutput)
           do j=1,ncells_y
             do i=1,ncells_x
               bID = localBlocks(nb)
-              if (units_type.eq.PHYS_UNITS) then
-                xx = real( PRIM(nb,firstpas+pas-1,i,j,k)*pas_sc, 4)
-              elseif (units_type.eq.CODE_UNITS) then
-                xx = real( PRIM(nb,firstpas+pas-1,i,j,k), 4)
-              end if
+              xx = real( PRIM(nb,firstpas+pas-1,i,j,k)/PRIM(nb,1,i,j,k), 4)
               write(unitout) xx
             end do
           end do
@@ -963,6 +988,8 @@ subroutine write2DMapVTK (outmap, nx, ny, outfname)
     end do
   end do
 #endif
+
+  ! Missing passive scalars ...
 
   close(unitout)
   write(logu,'(1x,a,a)') "Successfully wrote VTK file."

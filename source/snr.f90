@@ -51,8 +51,10 @@ module snr
   !  mass: mass of SN ejecta
   !  energy: total energy (thermal+kinetic) of explosion
   !  chi: ratio of kinetic to total energy
+  ! -- The following fields are optional --
   !  bx, by, bz: magnetic field strength in ejecta (may be ignored)
   !  time: time at which the SNR will be imposed
+  !  metal: metallicity of the ejecta (may be ignored)
   !  armed: a logical flag used to disarm the SNR once it is imposed
   ! All physical values must be given in *CGS*.
   type snr_params_type
@@ -63,11 +65,12 @@ module snr
     real :: mass
     real :: energy
     real :: chi
-    real :: bx
-    real :: by
-    real :: bz
-    real :: time
-    logical :: armed
+    real :: bx = 0.0
+    real :: by = 0.0
+    real :: bz = 0.0
+    real :: time = 0.0
+    real :: metal = 1.0
+    logical :: armed = .true.
   end type snr_params_type
  
   ! ============================================================================
@@ -94,7 +97,7 @@ contains
     integer :: nb, bID, i, j, k
     real :: xc, yc, zc, RSN, MSN, ESN, chi, bx, by, bz
     real :: x, y, z, dist
-    real(kind=8) :: Ek, Et, Pres, Dens, Vmax
+    real(kind=8) :: Ek, Et, Pres, Dens, Vmax, metal
     real(kind=8) :: Vel, Vx, Vy, Vz
     real :: primit(neqtot), flowvars(neqtot)
     real :: zone(6)
@@ -114,6 +117,7 @@ contains
     bx = snr_params%bx
     by = snr_params%by
     bz = snr_params%bz
+    metal = snr_params%metal
 
     ! Calculate derived parameters in cgs
     Ek = chi*ESN
@@ -184,9 +188,10 @@ contains
                 primit(7) = by
                 primit(8) = bz
 #endif
-
-                ! Hack: use a passive scalar to mark SNR material
-!                primit(firstpas) = primit(1)
+                ! Passive scalar for metalicity
+                if (cooling_type.eq.COOL_TABLE_METAL) then
+                  primit(metalpas) = metal*primit(1)
+                end if
 
                 ! Convert primitives and set flow vars for this cell
                 call prim2flow (primit, flowvars)
@@ -244,7 +249,7 @@ contains
     real, intent(inout) :: uvars(nbMaxProc, neqtot, nxmin:nxmax, nymin:nymax, nzmin:nzmax)
 
     integer :: nb, bID, i, j, k
-    real :: xc, yc, zc, RSN, MSN, ESN, chi, bx, by, bz
+    real :: xc, yc, zc, RSN, MSN, ESN, chi, bx, by, bz, metal
     real :: x, y, z, dist
     real(kind=8) :: n, xm, rc, rhoc, rho0
     real(kind=8) :: Ek, Eth, pres, dens, vmax
@@ -267,6 +272,7 @@ contains
     bx = snr_params%bx
     by = snr_params%by
     bz = snr_params%bz
+    metal = snr_params%metal
 
     ! Ejecta model parameters
     n = 7.0
@@ -353,8 +359,10 @@ contains
                 primit(7) = by
                 primit(8) = bz
 #endif
-                ! Hack: use a passive scalar to mark SNR material
-!                primit(firstpas) = primit(1)*-1
+                ! Passive scalar for metalicity
+                if (cooling_type.eq.COOL_TABLE_METAL) then
+                  primit(metalpas) = metal*primit(1)
+                end if
 
                 ! Convert primitives and set flow vars for this cell
                 call prim2flow (primit, flowvars)

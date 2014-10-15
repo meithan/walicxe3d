@@ -16,8 +16,9 @@ COMPILER= gfortran
 #USER_FLAGS= -O2 -warn nounused -nogen-interfaces
 #USER_FLAGS= -traceback -warn all -check all,noarg_temp_created -nogen-interfaces
 ## gfortran-compatible flags
-#USER_FLAGS= -Wall -pedantic -fbounds-check
+#USER_FLAGS= -Wall -pedantic -fbounds-check -g -fbacktrace
 #USER_FLAGS= -g -fbacktrace
+## Generic flags
 USER_FLAGS= -O3
 
 # ============================================= #
@@ -161,6 +162,8 @@ cleanall :
 	rm -f $(PROGRAM).*
 	rm -f coldens
 	rm -f extract
-	rm -f BIN/*
-	rm -f BIN/.visit
-	rm -f log/*
+	rm -f BIN/*.bin
+	rm -f BIN/*.vtk
+	rm -f BIN/*.dat
+	rm -f BIN/*.log
+	rm -f BIN/*.visit

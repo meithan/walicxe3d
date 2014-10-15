@@ -64,7 +64,8 @@ end subroutine deinit
 !===============================================================================
 
 !> @brief Aborts the execution cleanly, returning an error code
-!> @details The error code will be one of the constants defined in constants.f90
+!> @details The error code will be one of the constants defined in
+!! constants.f90
 subroutine clean_abort (errcode)
 
   use parameters
@@ -72,6 +73,11 @@ subroutine clean_abort (errcode)
   implicit none
 
   integer, intent(in) :: errcode
+
+  ! Close log file to make sure all output is flushed to disk
+  if (logged) then
+    close(unit=logu)
+  end if
 
 #ifdef MPIP
   call mpi_abort (MPI_COMM_WORLD, errcode, ierr)

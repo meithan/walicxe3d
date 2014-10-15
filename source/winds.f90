@@ -52,6 +52,9 @@ module winds
   ! vinf: terminal speed
   ! temp: temperature
   ! mu: gas mean atomic mass (in amus)
+  ! -- Optional fields --
+  ! bx, by, bz: magnetic field components (for runs with passive B field)
+  ! metal: metallicity of the gas (for runs with metallicity-dependent cooling)
   type spherical_wind_type
     real :: xc, yc, zc
     real :: vx, vy, vz
@@ -60,6 +63,10 @@ module winds
     real :: vinf
     real :: temp
     real :: mu
+    real :: bx = 0.0
+    real :: by = 0.0
+    real :: bz = 0.0
+    real :: metal = 1.0
   end type spherical_wind_type
   !===============================
 
@@ -80,6 +87,9 @@ module winds
   !      based on the plane of entry)
   ! temps: temperature of the flow
   ! mu: gas mean atomic mass (in amus)
+  ! -- Optional fields --
+  ! bx, by, bz: magnetic field components (for runs with passive B field)
+  ! metal: metallicity of the gas (for runs with metallicity-dependent cooling)
   integer, parameter :: PLANE_LEFT   = 1
   integer, parameter :: PLANE_RIGHT  = 2
   integer, parameter :: PLANE_FRONT  = 3
@@ -92,6 +102,10 @@ module winds
     real :: vel
     real :: temp
     real :: mu
+    real :: bx = 0.0
+    real :: by = 0.0
+    real :: bz = 0.0
+    real :: metal = 1.0
   end type plane_wind_type
   !===============================
   
@@ -118,7 +132,7 @@ contains
 
     integer :: nb, bID, i, j, k
     real :: xc, yc, zc, vwx, vwy, vwz, radius, mdot, vinf, temp
-    real :: dens, vx, vy, vz, pres, x, y, z, dist, mu
+    real :: dens, vx, vy, vz, pres, x, y, z, dist, mu, metal
     real :: primit(neqtot)
     real :: zone(6)
     integer :: zlevel
@@ -138,8 +152,10 @@ contains
     vinf = wind_params%vinf
     temp = wind_params%temp
     mu = wind_params%mu
+    metal = wind_params%metal
 
     ! Report wind parameters
+    ! TODO: REPORT ONLY ON FIRST CALL
     write(logu,'(1x,a,es12.5)') "Mdot = ", mdot
     write(logu,'(1x,a,es12.5)') "vinf = ", vinf
     write(logu,'(1x,a,es12.5)') "Radius = ", radius
@@ -192,13 +208,16 @@ contains
                   primit(3) = vy/v_sc
                   primit(4) = vz/v_sc
                   primit(5) = pres/p_sc
-
 #ifdef PASBP
                   ! Magnetic field
                   primit(6) = 0.0
                   primit(7) = 0.0
                   primit(8) = 0.0
 #endif
+                  ! Passive scalar for metalicity
+                  if (cooling_type.eq.COOL_TABLE_METAL) then
+                    primit(metalpas) = metal*primit(1)
+                  end if
 
                   ! Convert primitives and set flow vars for this cell
                   call prim2flow( primit, uvars(nb,:,i,j,k) )
@@ -233,7 +252,7 @@ contains
                            nxmin:nxmax, nymin:nymax, nzmin:nzmax)
 
     integer :: nb, bID, i, j, k, plane
-    real :: dens, vx, vy, vz, pres, temp, vel, mu
+    real :: dens, vx, vy, vz, pres, temp, vel, mu, metal
     real :: primit(neqtot)
     integer :: neighType
     integer :: neighList(4)
@@ -247,6 +266,7 @@ contains
     vel   = wind_params%vel
     temp  = wind_params%temp
     mu    = wind_params%mu
+    metal = wind_params%metal
 
     ! Impose flow conditions on ghost cells of TOP simulation boundary
     do nb=1,nbMaxProc
@@ -289,6 +309,11 @@ contains
                 primit(3) = vy/v_sc
                 primit(4) = vz/v_sc
                 primit(5) = pres/p_sc
+
+                ! Passive scalar for metalicity
+                if (cooling_type.eq.COOL_TABLE_METAL) then
+                  primit(metalpas) = metal*primit(1)
+                end if
 
                 ! Convert primitives and set flow vars for this cell
                 call prim2flow( primit, uvars(nb,:,i,j,k) )
