@@ -133,11 +133,11 @@ program coldens
   logical, parameter :: output_rg  = .true.    ! Graphic output
 
   ! Filenames
-  character(*), parameter :: datadir    = "./BIN/"            ! Path to data dir
-  character(*), parameter :: blockstpl  = "BlocksXXX.YYYY"    ! Data file template
+  character(*), parameter :: datadir    = "./DATA/"         ! Path to data dir
+  character(*), parameter :: blockstpl  = "BlocksXXX.YYYY"  ! Data file template
   character(*), parameter :: blockstpl2 = "BlocksXXX.YYYY+100" ! Data file template (alt)
-  character(*), parameter :: gridtpl    = "Grid.YYYY"         ! Grid file template
-  character(*), parameter :: statetpl   = "State.YYYY"        ! State file template
+  character(*), parameter :: gridtpl    = "Grid.YYYY"     ! Grid file template
+  character(*), parameter :: statetpl   = "State.YYYY"    ! State file template
 !  character(*), parameter :: outtpl     = "Xray0.15_8kev2.6e22X.YYYY"  ! Output file template
   character(*), parameter :: outtpl     = "SyncZZZ+AA_new.YYYY"  ! Output file template
 !  character(*), parameter :: outtpl     = "TestZZZ"  ! Output file template

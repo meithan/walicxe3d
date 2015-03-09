@@ -54,7 +54,7 @@ program extract
   real, parameter :: cut_location = 29.9*PC
 
   ! Filenames
-  character(*), parameter :: datadir = "./BIN/"     ! Path to data dir
+  character(*), parameter :: datadir = "./DATA/"     ! Path to data dir
   character(*), parameter :: blockstpl = "BlocksXXX.YYYY"  ! Data files template
   character(*), parameter :: outmaptpl = "CutD.YYYY"  ! Output file template
 
