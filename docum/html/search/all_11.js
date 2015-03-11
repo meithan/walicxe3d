@@ -1,0 +1,23 @@
+var searchData=
+[
+  ['siblingcoords',['siblingcoords',['../admesh_8f90.html#aa64906d26903b720cb3f6661c21c48f1',1,'admesh.f90']]],
+  ['siblingid',['siblingid',['../admesh_8f90.html#a516ea861ac413f558fcc3d29f030ae0a',1,'admesh.f90']]],
+  ['siblings',['siblings',['../admesh_8f90.html#aefb084d06b41cc52ecb6c8e240ffc586',1,'admesh.f90']]],
+  ['snr',['snr',['../classsnr.html',1,'']]],
+  ['snr_2ef90',['snr.f90',['../snr_8f90.html',1,'']]],
+  ['snr_5fparams_5ftype',['snr_params_type',['../structsnr_1_1snr__params__type.html',1,'snr']]],
+  ['solvekepler',['solvekepler',['../classorbits.html#a8af55d6352f97078cfe326a171d07c2e',1,'orbits']]],
+  ['solver_5fhll',['solver_hll',['../classconstants.html#a58b01c37c76f22be170d5fb25639fc06',1,'constants']]],
+  ['solver_5fhll1',['solver_hll1',['../classconstants.html#a55b498b94c7866608ebeb75cac57d41d',1,'constants']]],
+  ['solver_5fhllc',['solver_hllc',['../classconstants.html#a69872c0ea647366e5c5d6cdc1af28295',1,'constants']]],
+  ['solver_5flax',['solver_lax',['../classconstants.html#a51365844e4be50d3c50be9649d398316',1,'constants']]],
+  ['solver_5ftype',['solver_type',['../classparameters.html#a8ac5e933904da8c299765dedfee22cc2',1,'parameters']]],
+  ['sound',['sound',['../hydro_8f90.html#ab728e619fabaa5339726a7506022fd49',1,'hydro.f90']]],
+  ['spherical_5fwind_5ftype',['spherical_wind_type',['../structwinds_1_1spherical__wind__type.html',1,'winds']]],
+  ['stamp',['stamp',['../classtictoc.html#a071cce3081bc62c461ba65c2ef8b13e1',1,'tictoc']]],
+  ['start_5fmark',['start_mark',['../classglobals.html#a5a20d623e02db0daccd7f75454e2cf8d',1,'globals']]],
+  ['statetpl',['statetpl',['../classparameters.html#ab84f1c96284bbc15f032bbc38755a0f1',1,'parameters']]],
+  ['swapxy',['swapxy',['../prims_8f90.html#ab943f29f1385451fbef5c1809312bece',1,'prims.f90']]],
+  ['swapxz',['swapxz',['../prims_8f90.html#a81acf562c7962cb3c8b6729a3c65d8ba',1,'prims.f90']]],
+  ['syncblocklists',['syncblocklists',['../admesh_8f90.html#a7bae295a3701fad85dc4d74833c0c4e4',1,'admesh.f90']]]
+];
