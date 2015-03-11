@@ -261,7 +261,12 @@ subroutine write3DVTKBlocks (noutput)
   if (rank.eq.master) then
     write(noutstr,'(i4.4)') noutput
     write(visitfile,'(a)') trim(datadir) // trim(slash) // "master.visit"
-    open (unit=7, file=visitfile, status='unknown', position='append', iostat=istat)
+    if ((.not.dowarm).and.(noutput.eq.0)) then
+      open (unit=7, file=visitfile, status='replace', iostat=istat)
+    else
+      open (unit=7, file=visitfile, status='unknown', position='append', &
+      iostat=istat)
+    end if
     if (istat.ne.0) then
       write(logu,'(a,a,a)') "Could not open the file '", trim(visitfile), "' !"
       write(logu,'(a,a,a)') "Does the datadir '", trim(datadir), "' exist?"
