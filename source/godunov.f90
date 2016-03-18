@@ -88,7 +88,7 @@ subroutine Godunov (order)
       end select
 
       ! Apply conservative formula
-      call upwindStep (bIndx, dt)
+      call upwindStep (bIndx, dtp)
       
       bcount = bcount + 1      
 
@@ -110,7 +110,7 @@ subroutine Godunov (order)
     write(logu,*) "Boundaries exchanged in", nicetoc(mark)
 
     ! Update primitives in ghost cells
-    call calcPrimsAll (UP, PRIM, CELLS_GHOST)
+    call calcPrimsAll (UP, PRIM, CELLS_ALL)
 
     ! Second-order integration of all local blocks
     bcount = 0
