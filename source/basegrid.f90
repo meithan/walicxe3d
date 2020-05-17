@@ -75,9 +75,10 @@ subroutine basegrid ()
     nbrootz = p_nbrootz
 
     ! Number of max-resolution cells 
-    maxcells_x = ncells_x * 2**(maxlev-1)
-    maxcells_y = ncells_y * 2**(maxlev-1)
-    maxcells_z = ncells_z * 2**(maxlev-1)
+    maxcells_x = nbrootx * ncells_x * 2**(maxlev-1)
+    maxcells_y = nbrooty * ncells_y * 2**(maxlev-1)
+    maxcells_z = nbrootz * ncells_z * 2**(maxlev-1)
+    smalldim = min(maxcells_x, maxcells_y, maxcells_z)
 
   end if
 
