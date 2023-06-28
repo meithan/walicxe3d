@@ -133,7 +133,7 @@ program coldens
   logical, parameter :: output_rg  = .true.    ! Graphic output
 
   ! Filenames
-  character(*), parameter :: datadir    = "./DATA/"         ! Path to data dir
+  character(*), parameter :: datadir    = "./output/"         ! Path to data dir
   character(*), parameter :: blockstpl  = "BlocksXXX.YYYY"  ! Data file template
   character(*), parameter :: blockstpl2 = "BlocksXXX.YYYY+100" ! Data file template (alt)
   character(*), parameter :: gridtpl    = "Grid.YYYY"     ! Grid file template

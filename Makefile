@@ -162,8 +162,8 @@ cleanall :
 	rm -f $(PROGRAM).*
 	rm -f coldens
 	rm -f extract
-	rm -f DATA/*.bin
-	rm -f DATA/*.vtk
-	rm -f DATA/*.dat
-	rm -f DATA/*.log
-	rm -f DATA/*.visit
+	rm -f output/*.bin
+	rm -f output/*.vtk
+	rm -f output/*.dat
+	rm -f output/*.log
+	rm -f output/*.visit

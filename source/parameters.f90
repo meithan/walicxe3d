@@ -163,7 +163,7 @@ module parameters
   ! the output number. A file extension will be appended automatically
   ! depending on the selected format and should not be given here.
   !> Path to data directory
-  character(*), parameter :: datadir = "./DATA/"
+  character(*), parameter :: datadir = "./output/"
   !> Filename template for Blocks data files
   character(*), parameter :: blockstpl = "BlocksXXX.YYYY"
   !> Filename template for Grid data files
