@@ -45,6 +45,7 @@ MODULES_USER= \
 MODULES_MAIN= \
 ./source/constants.o \
 ./source/parameters.o \
+./source/tictoc.o \
 ./source/globals.o \
 ./source/snr.o \
 ./source/winds.o \
@@ -54,7 +55,6 @@ MODULES_MAIN= \
 # Dependent source files and modules in the MAIN CODE
 OBJECTS_MAIN= \
 ./source/initflow.o \
-./source/tictoc.o \
 ./source/admesh.o \
 ./source/initmain.o \
 ./source/basegrid.o \
