@@ -983,12 +983,12 @@ end subroutine bcoords
 
 !===============================================================================
 
-!> @brief Returns the physical coordinates (in code units) of a block's
-!! reference corner
+!> @brief Returns the absolute physical coordinates (in code units) of a
+!! block's reference corner
 !> @param bID The (absolute) block ID of the block
-!> @param x The level-specific integer x-coordinate
-!> @param y The level-specific integer y-coordinate
-!> @param z The level-specific integer z-coordinate
+!> @param x The absolute physical x-coordinate of the reference corner
+!> @param y The absolute physical y-coordinate of the reference corner
+!> @param z The absolute physical z-coordinate of the reference corner
 subroutine getRefCorner(bID, xx, yy, zz)
 
   use parameters
