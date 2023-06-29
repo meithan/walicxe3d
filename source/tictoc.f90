@@ -156,9 +156,9 @@ module tictoc
     elseif (seconds.lt.3600.0) then
       write(buffer,'(i2,a,f6.3,a)') mins, 'm ', secs, 's'
     elseif (seconds.lt.86400.0) then
-      write(buffer,'(i2,a,i2.2,a,f6.3,a)') hours, 'h ', mins, 'm ', secs, 's'
+      write(buffer,'(i2,a,i2,a,f6.3,a)') hours, 'h ', mins, 'm ', secs, 's'
     else
-      write(buffer,'(i3,a,i2.2,a,i2.2,a,F6.3,a)') &
+      write(buffer,'(i3,a,i2,a,i2,a,f6.3,a)') &
         days, 'd ', hours, 'h ', mins, 'm ', secs, 's'
     end if
 
