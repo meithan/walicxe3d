@@ -1011,6 +1011,37 @@ end subroutine getRefCorner
 
 !===============================================================================
 
+!> @brief Returns the absolute physical coordinates of a block's bounding box
+!> @param bID The (absolute) block ID of the block
+!> @param bbox An array (x1, x2, y1, y2, z1, z2) with the absolute physical
+!! coordinates (in code units) of the block's bounding box.
+subroutine getBoundingBox(bID, bbox)
+
+  use parameters
+  use globals
+  implicit none
+
+  integer, intent(in) :: bID
+  real, intent(out) :: bbox(6)
+
+  real :: x1, y1, z1
+  integer :: ilev
+
+  call getRefCorner(bID, x1, y1, z1)
+  call meshLevel(bID, ilev)
+  bbox(1) = x1
+  bbox(2) = x1 + dx(ilev)*ncells_block
+  bbox(3) = y1
+  bbox(4) = y1 + dy(ilev)*ncells_block
+  bbox(5) = z1
+  bbox(6) = z1 + dz(ilev)*ncells_block
+
+end subroutine getBoundingBox
+
+!===============================================================================
+
+!===============================================================================
+
 !> @brief Returns the physical position (in code units) of a single cell
 !> @param bID The block ID of the host block
 !> @param i The cell's integer x-position within the block (1 to ncells_x)
