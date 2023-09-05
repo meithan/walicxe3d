@@ -45,8 +45,8 @@ MODULES_USER= \
 MODULES_MAIN= \
 ./source/constants.o \
 ./source/parameters.o \
-./source/tictoc.o \
 ./source/globals.o \
+./source/tictoc.o \
 ./source/snr.o \
 ./source/winds.o \
 ./source/orbits.o \
@@ -156,10 +156,10 @@ prebuild :
 clean : 
 	rm -f *.o *.mod source/*.o source/*.mod
 
-cleanall :
-	rm -f *.o *.mod source/*.o source/*.mod
+cleanall : clean
 	rm -f $(PROGRAM)
-	rm -f $(PROGRAM).*
+	rm -f *.out *.err
+	rm -f tmp-machines-file.out
 	rm -f coldens
 	rm -f extract
 	rm -f output/*.bin
