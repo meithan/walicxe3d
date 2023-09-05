@@ -10,11 +10,11 @@
 ### Queue name and number of nodes:processors per node
 #PBS -q default
 #PBS -r n
-#PBS -l nodes=1:new:ppn=12
+#PBS -l nodes=1:ppn=32
 
 ### Set environment variables for mpi.
-export PATH=/usr/mpi/intel/mvapich2-1.8/bin:/usr/local/bin:${PATH}
-export MPD_BIN=/usr/local/bin:
+#export PATH=/usr/mpi/intel/mvapich2-1.8/bin:/usr/local/bin:${PATH}
+#export MPD_BIN=/usr/local/bin:
 ### Set the execution directory. This directory MUST exist on each node.
 WORKDIR=""
 ### EXEPATH is the directory where your executable resides
@@ -49,6 +49,6 @@ echo
 echo  mpdboot -n $NP_MPD -v --file=$TMP_MACHINES
 echo  mpiexec -n $NPROCS $EXEPATH$EXE $ARGS $INFILE
 mpdboot -n $NP_MPD -v --file=$TMP_MACHINES
-mpiexec -n $NPROCS $EXEPATH$EXE $ARGS $INFILE
+mpiexec.hydra -n $NPROCS $EXEPATH$EXE $ARGS $INFILE
 mpdallexit
 rm -f $TMP_MACHINES
