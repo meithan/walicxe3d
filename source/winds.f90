@@ -299,6 +299,12 @@ contains
     real, intent(inout) :: uvars(nbMaxProc, neqtot, &
                            nxmin:nxmax, nymin:nymax, nzmin:nzmax)
 
+    type(SphericalWindType), dimension(1) :: winds_list
+
+    winds_list(1) = wind
+
+    call imposeSphericalWindsList(1, winds_list, uvars)
+
   end subroutine imposeSphericalWind
 
 ! =============================================
