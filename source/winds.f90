@@ -31,8 +31,8 @@
 !! The module currently supports
 !! 1) The parameters of each wind must be defined by creating an object of
 !!    the appropriate type. The currently supported wind types are:
-!!      type_spherical_wind : a spherical r^-2 wind
-!!      type_plane_wind : a planar wind (to be used as in inflow condition)
+!!      SphericalWindType : a spherical r^-2 wind
+!!      PlaneWindType : a planar wind (to be used as in inflow condition)
 !!    Then, the user must specify the corresponding wind parameters.
 !! 2) The user must modify the userBC() subroutine in the user.f90 source
 !!    file, adding a call to the corresponding subroutine: 
@@ -55,7 +55,9 @@ module winds
   ! -- Optional fields --
   ! bx, by, bz: magnetic field components (for runs with passive B field)
   ! metal: metallicity of the gas (for runs with metallicity-dependent cooling)
-  type spherical_wind_type
+  ! -- Internal fields (not set by the user) --
+  ! bbox: the physical coordinates of the wind source's bounding box
+  type SphericalWindType
     real :: xc, yc, zc
     real :: vx, vy, vz
     real :: radius
@@ -67,7 +69,8 @@ module winds
     real :: by = 0.0
     real :: bz = 0.0
     real :: metal = 1.0
-  end type spherical_wind_type
+    real :: bbox(6)
+  end type SphericalWindType
   !===============================
 
   !===============================
@@ -96,7 +99,7 @@ module winds
   integer, parameter :: PLANE_BACK   = 4
   integer, parameter :: PLANE_BOTTOM = 5
   integer, parameter :: PLANE_TOP    = 6
-  type plane_wind_type
+  type PlaneWindType
     integer :: plane
     real :: rho
     real :: vel
@@ -106,74 +109,142 @@ module winds
     real :: by = 0.0
     real :: bz = 0.0
     real :: metal = 1.0
-  end type plane_wind_type
+  end type PlaneWindType
   !===============================
   
 contains
-
+  
   ! ============================================
-  !> @brief Imposes a spherical wind source on the simulation
+  !> @brief Imposes a spherical wind source in a specific simulation block
   !> @details Simulates a spherical wind source by setting the flow
   !! conditions in a region of given radius centered at (xc,yc,zc), 
   !! in which a steady-state wind solution is imposed with the given
-  !! mass-loss rate, terminal speed and temperature.
-  !> @param wind_params A spherical_wind_type variable containing the
+  !! mass-loss rate, terminal speed and temperature. This is called by
+  !! imposeSphericalWindsList().
+  !> @param nb The index of the block in the local blocks registry
+  !> @param wind A SphericalWindType variable containing the
   !! wind parameters. See the module documentation for further details.
   !> @param uvars Flow variables array to be modified
-  subroutine imposeSphericalWind (wind_params, uvars)
+  subroutine imposeSphericalWindBlock (nb, wind, uvars)
  
     use parameters
     use globals
     implicit none
 
-    type(spherical_wind_type), intent(in) :: wind_params
+    integer, intent(in) :: nb
+    type(SphericalWindType), intent(in) :: wind
     real, intent(inout) :: uvars(nbMaxProc, neqtot, &
                            nxmin:nxmax, nymin:nymax, nzmin:nzmax)
 
-    integer :: nb, bID, i, j, k
-    real :: xc, yc, zc, vwx, vwy, vwz, radius, mdot, vinf, temp
-    real :: dens, vx, vy, vz, pres, x, y, z, dist, mu, metal
+    integer :: i, j, k, bID
+    real :: x, y, z, dist, dens, vx, vy, vz, pres
     real :: primit(neqtot)
-    real :: zone(6)
-    integer :: zlevel
 
-    write(logu,*) ""
-    write(logu,'(1x,a)') "> Imposing spherical wind source ..."
+    bID = localblocks(nb)
 
-    ! Unpack wind source parameters
-    xc = wind_params%xc
-    yc = wind_params%yc
-    zc = wind_params%zc
-    vwx = wind_params%vx
-    vwy = wind_params%vy
-    vwz = wind_params%vz
-    radius = wind_params%radius
-    mdot = wind_params%mdot
-    vinf = wind_params%vinf
-    temp = wind_params%temp
-    mu = wind_params%mu
-    metal = wind_params%metal
+    ! Loop over all cells of the block
+    do k=nxmin,nxmax
+      do j=nymin,nymax
+        do i=nzmin,nzmax
 
-    ! Report wind parameters
-    ! TODO: REPORT ONLY ON FIRST CALL
-    write(logu,'(1x,a,es12.5)') "Mdot = ", mdot
-    write(logu,'(1x,a,es12.5)') "vinf = ", vinf
-    write(logu,'(1x,a,es12.5)') "Radius = ", radius
-    write(logu,'(1x,a,es12.5)') "Rho(R) = ", mdot/vinf/radius/radius/(4*PI)
-    write(logu,'(1x,a,es12.5)') "Temp = ", temp
-    write(logu,'(1x,a,es12.5,1x,es12.5,1x,es12.5)') "Location: ", xc, yc, zc
+          ! Compute absolute cell position, de-scaled
+          call cellPos (bID, i, j, k, x, y, z)
+          x = x*l_sc;  y = y*l_sc;  z = z*l_sc
 
-    ! Refine the zone around the wind source to provide adequate resolution
+          ! Distance to wind source center
+          dist = sqrt((x-wind%xc)**2+(y-wind%yc)**2+(z-wind%zc)**2)   ! phys units
+          
+          if (dist.lt.wind%radius) then
+
+            ! Calculate wind density, velocity components and pressure in this cell
+            dens = wind%mdot/wind%vinf/dist/dist/(4.0*PI)
+            vx = wind%vinf*(x-wind%xc)/dist + wind%vx
+            vy = wind%vinf*(y-wind%yc)/dist + wind%vy
+            vz = wind%vinf*(z-wind%zc)/dist + wind%vz
+            pres = dens/(wind%mu*AMU)*KB*wind%temp
+
+            ! DEBUG
+!            write(logu,*) dens, vx/1e5, vy/1e5, vz/1e5, pres
+            ! DEBUG
+
+            ! Scale primitives
+            primit(1) = dens/d_sc
+            primit(2) = vx/v_sc
+            primit(3) = vy/v_sc
+            primit(4) = vz/v_sc
+            primit(5) = pres/p_sc
+#ifdef PASBP
+            ! Magnetic field
+            primit(6) = wind%bx
+            primit(7) = wind%by
+            primit(8) = wind%bz
+#endif
+            ! Passive scalar for metalicity
+            if (cooling_type.eq.COOL_TABLE_METAL) then
+              primit(metalpas) = wind%metal*primit(1)
+            end if
+
+            ! Convert primitives and set flow vars for this cell
+            call prim2flow( primit, uvars(nb,:,i,j,k) )
+
+          end if
+
+        end do ! i
+      end do ! j
+    end do ! k 
+
+  end subroutine imposeSphericalWindBlock
+  
+  ! ============================================
+  !> @brief Imposes a list of spherical wind sources on the simulation
+  !> @details This is the main subroutine to call to impose multiple
+  !! wind sources, as it is more efficient than calling imposeSphericalWind()
+  !! for each wind in turn.
+  !> @num_winds The number of wind sources contained in the array
+  !> @winds_list An array of SphericalWindType variables with the properties
+  !! of the winds to be imposed
+  !> @param uvars Flow variables array to be modified
+  subroutine imposeSphericalWindsList (num_winds, winds_list, uvars)
+ 
+    use parameters
+    use globals
+    implicit none
+
+    integer, intent(in) :: num_winds
+    type(SphericalWindType), intent(inout) :: winds_list(:)
+    real, intent(inout) :: uvars(nbMaxProc, neqtot, &
+                           nxmin:nxmax, nymin:nymax, nzmin:nzmax)
+
+    integer :: i, l, nb, bID
+    type(SphericalWindType) :: wind
+    logical :: intersects
+    real :: bbox(6)
+
+    !write(logu,*) ""
+    write(logu,'(1x,a)') "> Imposing spherical wind sources ..."
+    write(logu,'(1x,a,i,a)') "There are ", num_winds, " wind sources"
+
+    ! Refine zones, compute bounding box and report parameters for all wind sources
     if (it.eq.0) then
-      write(logu,*) "(winds)it=",it
-      zone(1) = xc - radius
-      zone(2) = xc + radius
-      zone(3) = yc - radius
-      zone(4) = yc + radius
-      zone(5) = zc - radius
-      zone(6) = zc + radius
-      zlevel = maxlev
-      call refineZone (zone, zlevel)  
+      do i=1,num_winds
+        wind = winds_list(i)
+        write(logu,*)
+        write(logu,*) "----------------------------"
+        write(logu,'(1x,a,i)') "Source #", i
+        write(logu,'(1x,a,es12.5,a)') "Mdot = ", wind%mdot / (MSUN/YR), " Msun/yr"
+        write(logu,'(1x,a,es12.5,a)') "vinf = ", wind%vinf / KPS, " km/s"
+        write(logu,'(1x,a,es12.5,a)') "radius = ", wind%radius / PC, " pc"
+        write(logu,'(1x,a,es12.5,a)') "rho(R) = ", wind%mdot/wind%vinf/wind%radius/wind%radius/(4.0*PI), " g/cm^3"
+        write(logu,'(1x,a,es12.5,a)') "temp = ", wind%temp, " K"
+        write(logu,'(1x,a,es12.5,1x,es12.5,1x,es12.5,a)') "Location: ", wind%xc/PC, wind%yc/PC, wind%zc/PC, " pc"
+        winds_list(i)%bbox(1) = wind%xc - wind%radius
+        winds_list(i)%bbox(2) = wind%xc + wind%radius
+        winds_list(i)%bbox(3) = wind%yc - wind%radius
+        winds_list(i)%bbox(4) = wind%yc + wind%radius
+        winds_list(i)%bbox(5) = wind%zc - wind%radius
+        winds_list(i)%bbox(6) = wind%zc + wind%radius
+        call refineZone (winds_list(i)%bbox, maxlev) 
+      end do
     end if
 
     ! Impose flow conditions, where applicable
@@ -181,55 +252,52 @@ contains
       bID = localBlocks(nb)
       if (bID.ne.-1) then
 
-        do i=nxmin,nxmax
-          do j=nymin,nymax
-            do k=nzmin,nzmax
+        ! Iterate over wind sources
+        do l=1,num_winds
+           
+           wind = winds_list(l)
 
-              call cellPos (bID, i, j, k, x, y, z)
-              x = x*l_sc;  y = y*l_sc;  z = z*l_sc
-              dist = sqrt((x-xc)**2+(y-yc)**2+(z-zc)**2)   ! phys units
+          ! Check whether the wind bounding box intersects with the block
+          call getBoundingBox(bID, bbox)
+          bbox(1) = bbox(1) * l_sc
+          bbox(2) = bbox(2) * l_sc
+          bbox(3) = bbox(3) * l_sc
+          bbox(4) = bbox(4) * l_sc
+          bbox(5) = bbox(5) * l_sc
+          bbox(6) = bbox(6) * l_sc
+          intersects = ((wind%bbox(1).le.bbox(2)) .and. (wind%bbox(2).ge.bbox(1)) &
+          .and. (wind%bbox(3).le.bbox(4)) .and. (wind%bbox(4).ge.bbox(3)) &
+          .and. (wind%bbox(5).le.bbox(6)) .and. (wind%bbox(6).ge.bbox(5)))
 
-              if (dist.lt.radius) then
+          ! Only impose wind if the wind bbox intersects
+          if (intersects) then 
+            call imposeSphericalWindBlock(nb, winds_list(l), uvars)
+          end if
 
-                  ! Calculate wind density, velocity and pressure in this cell
-                  dens = mdot/vinf/dist/dist/(4.0*PI)
-                  vx = vinf*(x-xc)/dist + vwx
-                  vy = vinf*(y-yc)/dist + vwy
-                  vz = vinf*(z-zc)/dist + vwz
-                  pres= dens/(mu*AMU)*KB*temp
-
-                  ! DEBUG
-!                  write(logu,*) dens, vx/1e5, vy/1e5, vz/1e5, pres
-                  ! DEBUG
-
-                  ! Scale primitives
-                  primit(1) = dens/d_sc
-                  primit(2) = vx/v_sc
-                  primit(3) = vy/v_sc
-                  primit(4) = vz/v_sc
-                  primit(5) = pres/p_sc
-#ifdef PASBP
-                  ! Magnetic field
-                  primit(6) = 0.0
-                  primit(7) = 0.0
-                  primit(8) = 0.0
-#endif
-                  ! Passive scalar for metalicity
-                  if (cooling_type.eq.COOL_TABLE_METAL) then
-                    primit(metalpas) = metal*primit(1)
-                  end if
-
-                  ! Convert primitives and set flow vars for this cell
-                  call prim2flow( primit, uvars(nb,:,i,j,k) )
-
-              end if
-
-            end do
-          end do
         end do
 
       end if
     end do
+
+  end subroutine imposeSphericalWindsList
+
+! =============================================
+  
+  !> @brief Impose a single spherical wind source in the simulation
+  !> @details This is a wrapper that will create a wind_list with a single
+  !! wind and call imposeSphericalWindsList() on it
+  !> @params wind A SphericalWindType variable containing the wind
+  !! parameters. See the module documentation for further details.
+  !> @param uvars Flow variables array to be modified
+  subroutine imposeSphericalWind (wind, uvars)
+    
+    use parameters
+    use globals
+    implicit none
+
+    type(SphericalWindType), intent(in) :: wind
+    real, intent(inout) :: uvars(nbMaxProc, neqtot, &
+                           nxmin:nxmax, nymin:nymax, nzmin:nzmax)
 
   end subroutine imposeSphericalWind
 
@@ -238,7 +306,7 @@ contains
   !> @brief Imposes a planar wind on one of the edges of the simulation box.
   !> @details Simulates a planar wind entering the simulation box
   !! by setting the flow conditions in the appropriate boundary layer. 
-  !> @params wind_params A plane_winds_type variable containing the wind
+  !> @params wind_params A PlaneWindType variable containing the wind
   !! parameters. See the module documentation for further details.
   !> @param uvars Flow variables array to be modified
   subroutine imposePlaneWind (wind_params, uvars)
@@ -247,7 +315,7 @@ contains
     use globals
     implicit none
 
-    type(plane_wind_type), intent(in) :: wind_params
+    type(PlaneWindType), intent(in) :: wind_params
     real, intent(inout) :: uvars(nbMaxProc, neqtot, &
                            nxmin:nxmax, nymin:nymax, nzmin:nzmax)
 
