@@ -38,15 +38,17 @@ subroutine main_report ()
 
   ! Report progress
   write(logu,*) "============================================"
-  write(logu,'(1x,a,i0,a)') "Iteration " , it, " complete!"
   write(logu,'(1x,a)') stamp()
-  write(logu,'(1x,a,a)') "Elapsed: ", nicetoc(start_mark)
+  write(logu,'(1x,a,i0,a)') "Iteration " , it, " complete!"
+  write(logu,'(1x,a,a)') "Iteration elapsed: ", nicetoc(it_mark)
+  write(logu,'(1x,a,a)') "Total elapsed: ", nicetoc(start_mark)
   write(logu,'(1x,a,a)') "time = ", trim(timestr)
   write(logu,'(1x,a,a)') "dt = ", trim(dtstr)
-  write(logu,'(1x,i0,a)') nbLocal, " local blocks"
+  write(logu,'(1x,i0,a,i0,a)') nbLocal, " / ", nbMaxProc, " local blocks"
+  write(logu,'(1x,i0,a,i0,a)') nbActive, " / ", nbMaxGlobal, " global blocks"
   write(logu,*) "============================================"
   write(logu,'(1x,a,i0,a,a,a,a,a,i0,a,i0)') "it ", it, "; t= ", &
-    trim(timestr), "; dt=", trim(dtstr), "; blocks=", nbLocal, "/", nbActive
+    trim(timestr), "; dt=", trim(dtstr), "; blocks=", nbLocal, "|", nbActive
   write(logu,*) "============================================"
   write(logu,*) ""
 

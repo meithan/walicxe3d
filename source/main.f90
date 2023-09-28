@@ -69,6 +69,7 @@ program Walicxe3D
   do while (time.le.tfin/t_sc)
 
     it = it + 1
+    call tic(it_mark)
 
     write(logu,'(a)') "================================================================================"
     write(logu,'(1x,a,i0)') "Starting Iteration " , it

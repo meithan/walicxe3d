@@ -56,6 +56,7 @@ module globals
 
   ! Generic globals
   integer :: start_mark     !< Timing mark (start of simulation)
+  integer :: it_mark        !< Timing mark (start of iteration)
   integer :: logu           !< Logfile unit number
   character(80) :: logfile  !< Logfile name
   character(15) :: host     !< The host on which the code runs

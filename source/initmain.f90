@@ -152,8 +152,6 @@ subroutine initmain ()
     write(logu,'(1x,a)') "***************************************************"
   end if
 
-  call tic (start_mark)
-
   write(logu,*) ""
   write(logu,'(1x,a,i0,a)') "Processor ", rank, " ready."
 
