@@ -1,76 +1,56 @@
 # Creates a visit master file for the specified outputs
 
 # If executed without arguments, runs in interactive mode.
-# Otherwise, the user must provide the number of processors, followed by one
-# or several output numbers. An output number can be:
-#  1) a single output number, X
-#  2) a range of the form X-Y, going from X to Y (inclusive)
-#  3) a range of the form X-Y-S, going from X to Y in steps of S
+# Otherwise, the user must provide command-line arguments. See --help for details.
 
+import argparse
 import sys
 
 # ===============
 
-def err_msg():
-  print
-  print "Input error!"
-  print
-  print "Program usage:"
-  print "master (no arguments: interactive mode)"
-  print "    -OR-"
-  print "master <processors> <outputspec> [,<outputspec>]"
-  print "where <outputspec> is an output number specification:"
-  print "1) a single output number, X"
-  print "2) a range of the form X-Y, from X to Y (inclusive)"
-  print "3) a range of the form X-Y-S, from X to Y in steps of S"
-  print "If more than one output number specification is given, they"
-  print "must be comma-separated."
-  sys.exit()
+parser = argparse.ArgumentParser(
+  prog="python master.py",
+  description="""Creates a visit master file for the specified outputs.
 
-# ===============
+Call without arguments for interactive mode
+-OR-
+Call with the following command-line arguments:""",
+formatter_class=argparse.RawTextHelpFormatter
+)
+parser.add_argument("num_procs", type=int, nargs="?", help="The number of processes")
+parser.add_argument("output_spec", nargs="?", help="The output or range of outputs, dash-separated, which must be one of:\n1) A single output number, X\n2) A range of the form X-Y, meaning from X to Y (inclusive)\n3) A range of the form X-Y-S, meaning from X to Y in steps of S")
+parser.add_argument("-i", "--interactive", action="store_true", help="Run in interactive mode (default if no arguments passed)")
 
-if len(sys.argv) == 1:
-  ans = raw_input("Number of processors: ")
-  try: nprocs = int(ans)
-  except: err_msg()
-  outstr = raw_input("Enter output numbers: ")
+args = parser.parse_args()
+
+if len(sys.argv) == 1 or args.interactive:
+  # Interactive mode
+  print("(Running in interactive mode, see --help for other options)")
+  nprocs = int(input("Number of processes: "))
+  output_spec = input("Output numbers (X, X-Y or X-Y-S): ")
 else:
-  try:
-    nprocs = int(sys.argv[1])
-    outstr = " ".join(sys.argv[2:])
-  except:
-    err_msg()
+  # Parse command-line arguments
+  nprocs = args.num_procs
+  output_spec = args.output_spec
 
-# Parse outstr to build list of output numbers
-outlist = []
-outspecs = map(lambda x: x.strip(), outstr.split(","))
-for spec in outspecs:
-  if spec.count("-") == 0:
-    try: outlist.append(int(spec))
-    except: err_msg()
-  elif spec.count("-") in [1,2]:
-    ns = spec.split("-")
-    try:
-      a = int(ns[0])
-      b = int(ns[1])
-      if len(ns) == 3:
-        s = int(ns[2])
-      else:
-        s = 1
-      for n in range(a,b+1,s):
-        outlist.append(n)
-    except:
-       err_msg()
+if output_spec.count("-") == 0:
+  outlist = [int(output_spec)]
+elif output_spec.count("-") in [1, 2]:
+  tokens = output_spec.split("-")
+  start = int(tokens[0])
+  end = int(tokens[1])
+  if len(tokens) == 3:
+    step = int(tokens[2])
+    outlist = list(range(start, end+1, step))
   else:
-     err_msg()
-outlist.sort()
-     
-# Write master
-f = open("master.visit","w")
-f.write("!NBLOCKS%6i" % nprocs)
+    outlist = list(range(start, end+1))
+
+# Write master file
+f = open("master.visit", "w")
+f.write("!NBLOCKS {}\n".format(nprocs))
 for outnum in outlist: 
   for proc in range(nprocs):
-    f.write("\nBlocks%03i.%04i.vtk" % (proc, outnum))
+    f.write("Blocks{:03d}.{:04d}.vtk\n".format(proc, outnum))
 f.close()
-print "Wrote master.visit"
+print("Wrote master.visit")
 
