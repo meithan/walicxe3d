@@ -34,7 +34,8 @@ subroutine output (noutput)
 
   integer, intent(in) :: noutput
 
-  integer :: mark, startmark, p
+  integer(8) :: mark, startmark
+  integer :: p
 
   write(logu,*) ""
   write(logu,*) "============================================"

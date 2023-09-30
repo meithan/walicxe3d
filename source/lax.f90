@@ -31,7 +31,8 @@ subroutine LaxFriedrichs ()
   use tictoc
   implicit none
 
-  integer :: nb, bID, lev, i, j, k, mark
+  integer :: nb, bID, lev, i, j, k
+  integer(8) :: mark
   real :: pvars(neqtot)
 
   ! Exchange boundaries to fill ghost cells (all blocks)

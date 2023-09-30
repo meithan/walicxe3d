@@ -34,7 +34,7 @@ subroutine loadBalance ()
   use tictoc
   implicit none
 
-  integer :: mark
+  integer(8) :: mark
 
   call tic(mark)
 
@@ -74,7 +74,7 @@ subroutine doBalance ()
   integer :: nb, nbloc, p, c, bID, nData
   integer :: old_owner, new_owner, blocks, badcells
   integer :: mpistatus(MPI_STATUS_SIZE)
-  integer :: mark
+  integer(8) :: mark
   integer :: sent, received
   logical :: verbose  
 

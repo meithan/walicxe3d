@@ -33,7 +33,7 @@ subroutine updatePrims ()
   use tictoc
   implicit none
  
-  integer :: mark
+  integer(8) :: mark
   
   write(logu,*) ""
   write(logu,'(1x,a)') "> Updating primitive variables ..."

@@ -34,7 +34,8 @@ subroutine initmain ()
   implicit none
 
   integer :: nps, istat, inext
-  integer :: mark, l
+  integer :: l
+  integer(8) :: mark
   logical :: existing, success
   real :: totalsize
   character(3) :: rankstr

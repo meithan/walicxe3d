@@ -36,7 +36,8 @@ subroutine basegrid ()
 
   ! Local variables
   integer :: maxlevx, maxlevy, maxlevz, smalldim
-  integer :: nb, bID, ilev, x, y, z, mark
+  integer :: nb, bID, ilev, x, y, z
+  integer(8) :: mark
   real :: smallsize
 
   call tic(mark)

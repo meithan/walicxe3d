@@ -31,7 +31,8 @@ subroutine cooling
   use tictoc
   implicit none
 
-  integer :: mark, nb, bID
+  integer :: nb, bID
+  integer(8) :: mark
   real :: maxloss
  
   if (cooling_type.ne.COOL_NONE) then 

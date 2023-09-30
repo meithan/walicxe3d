@@ -88,7 +88,7 @@ module tictoc
   !> @details Used to create a time mark at certain point in the execution.
   !> @retval mark An @c INTEGER representing a time mark
   subroutine tic (mark)    
-    integer, intent(out) :: mark
+    integer(8), intent(out) :: mark
     
     call system_clock(mark)
 
@@ -101,7 +101,7 @@ module tictoc
   !! represented as an @c INTEGER previously returned by @c TIC.
   !> @return A @C REAL value with the number of elapsed seconds
   real function toc (mark)
-    integer, intent(in) :: mark
+    integer(8), intent(in) :: mark
 
     integer :: now, RATE, CMAX
 
@@ -118,7 +118,7 @@ module tictoc
   !> @details Calls toc and then post-processes the result through timeformat.
   !> @return A character string with the elapsed hours, minutes and seconds.
   character(len=30) function nicetoc (mark)
-    integer, intent(in) :: mark
+    integer(8), intent(in) :: mark
 
     real :: secs
     character(len=30) :: buffer
@@ -176,7 +176,7 @@ module tictoc
   !! as a progress value given as a real number between 0 and 1.
   !> @return A character string with the hours, minutes and seconds remaining.
   character(len=20) function eta (mark, progress)
-    integer, intent(in) :: mark
+    integer(8), intent(in) :: mark
     real, intent(in) :: progress
 
     integer :: now, elapsed, RATE, CMAX

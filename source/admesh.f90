@@ -37,7 +37,7 @@ subroutine admesh ()
   integer :: nb, bID, flag
   integer :: refcount, crscount
   integer :: localFlags (nbMaxProc)
-  integer :: mark
+  integer(8) :: mark
   logical :: test(nbMaxGlobal)  ! DEBUG
 
   logical :: verbose = .false.

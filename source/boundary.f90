@@ -74,7 +74,8 @@ subroutine normalBoundary (depth, uvars)
   integer :: srcInd, nData, src_face, depth1, ieq, bc_type
   integer :: i, j, k, ip, jp, kp, i1, i2, i3, i4, j1, j2, j3, j4, k1, k2, k3, k4
   integer :: sx, sy, sz
-  integer :: ntype, neighs(4), mark
+  integer :: ntype, neighs(4)
+  integer(8) :: mark
   integer :: mpistatus(MPI_STATUS_SIZE)
   real :: x_buf(neqtot, depth, ncells_y/2, ncells_z/2)
   real :: y_buf(neqtot, ncells_x/2, depth, ncells_z/2)

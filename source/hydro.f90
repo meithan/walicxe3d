@@ -31,7 +31,7 @@ subroutine hydroSolver ()
   use tictoc
   implicit none
 
-  integer :: mark, mark1
+  integer(8) :: mark, mark1
   real :: dt_new
 
   call tic(mark)

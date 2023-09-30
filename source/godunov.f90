@@ -36,7 +36,8 @@ subroutine Godunov (order)
 
   integer, intent(in) :: order
 
-  integer :: bIndx, bID, mark, bcount
+  integer :: bIndx, bID, bcount
+  integer(8) :: mark
   real :: dtp
 
   ! -----------------------------------
