@@ -153,9 +153,7 @@ module tictoc
     mins = int(secs/60)
     secs = secs - mins*60
 
-    if (seconds.lt.0.5) then
-      write(buffer, '(i3,a)') int(secs*1000), 'ms'
-    else if (seconds.lt.60.0) then
+    if (seconds.lt.60.0) then
       write(buffer, '(f6.3,a)') secs, 's'
     else if (seconds.lt.3600.0) then
       write(buffer, '(i3,a,f6.3,a)') mins, 'm ', secs, 's'
