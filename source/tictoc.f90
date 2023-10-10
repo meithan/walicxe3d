@@ -88,6 +88,7 @@ module tictoc
   !> @details Used to create a time mark at certain point in the execution.
   !> @retval mark An @c INTEGER representing a time mark
   subroutine tic (mark)    
+    
     integer(8), intent(out) :: mark
     
     call system_clock(mark)
@@ -101,9 +102,9 @@ module tictoc
   !! represented as an @c INTEGER previously returned by @c TIC.
   !> @return A @C REAL value with the number of elapsed seconds
   real function toc (mark)
-    integer(8), intent(in) :: mark
 
-    integer :: now, RATE, CMAX
+    integer(8), intent(in) :: mark
+    integer(8) :: now, RATE, CMAX
 
     CALL system_clock(now,RATE,CMAX)
 
@@ -118,12 +119,13 @@ module tictoc
   !> @details Calls toc and then post-processes the result through timeformat.
   !> @return A character string with the elapsed hours, minutes and seconds.
   character(len=30) function nicetoc (mark)
+    
     integer(8), intent(in) :: mark
-
     real :: secs
     character(len=30) :: buffer
 
     secs = toc(mark)
+    print *, mark, secs
     buffer = ftime(secs)
     nicetoc = buffer
     return
@@ -137,8 +139,8 @@ module tictoc
   !! a character string with the time formatted as hours, minutes, seconds.
   !> @return A character string representingt the time laps in h, m, s
   character(len=30) function ftime (seconds)
-    real, intent(in) :: seconds
 
+    real, intent(in) :: seconds
     integer :: days, hours, mins
     real :: secs
     character(len=30) :: buffer
@@ -151,14 +153,16 @@ module tictoc
     mins = int(secs/60)
     secs = secs - mins*60
 
-    if (seconds.lt.60.0) then
-      write(buffer,'(f6.3,a)') secs, 's'
-    elseif (seconds.lt.3600.0) then
-      write(buffer,'(i3,a,f6.3,a)') mins, 'm ', secs, 's'
-    elseif (seconds.lt.86400.0) then
-      write(buffer,'(i3,a,i2,a,f6.3,a)') hours, 'h ', mins, 'm ', secs, 's'
+    if (seconds.lt.0.5) then
+      write(buffer, '(i3,a)') int(secs*1000), 'ms'
+    else if (seconds.lt.60.0) then
+      write(buffer, '(f6.3,a)') secs, 's'
+    else if (seconds.lt.3600.0) then
+      write(buffer, '(i3,a,f6.3,a)') mins, 'm ', secs, 's'
+    else if (seconds.lt.86400.0) then
+      write(buffer, '(i3,a,i2,a,f6.3,a)') hours, 'h ', mins, 'm ', secs, 's'
     else
-      write(buffer,'(i3,a,i2,a,i2,a,f6.3,a)') &
+      write(buffer, '(i3,a,i2,a,i2,a,f8.3,a)') &
         days, 'd ', hours, 'h ', mins, 'm ', secs, 's'
     end if
 
@@ -176,9 +180,9 @@ module tictoc
   !! as a progress value given as a real number between 0 and 1.
   !> @return A character string with the hours, minutes and seconds remaining.
   character(len=20) function eta (mark, progress)
+
     integer(8), intent(in) :: mark
     real, intent(in) :: progress
-
     integer :: now, elapsed, RATE, CMAX
     integer :: hours, mins
     real :: remaining, secs
@@ -216,7 +220,6 @@ module tictoc
   !> @return A character string with the current date and time.  
   character(len=22) function stamp ()
     
-    ! Local variables
     character(len=22) :: buffer
     integer :: now(8)
     character(8) :: datestr
