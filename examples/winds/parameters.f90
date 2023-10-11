@@ -171,7 +171,7 @@ module parameters
   ! the output number. A file extension will be appended automatically
   ! depending on the selected format and should not be given here.
   !> Path to data directory
-  character(*), parameter :: datadir = "./BIN/"
+  character(*), parameter :: datadir = "./output/"
   !> Filename template for Blocks data files
   character(*), parameter :: blockstpl = "BlocksXXX.YYYY"
   !> Filename template for Grid data files
@@ -233,7 +233,7 @@ module parameters
   integer, parameter :: cooling_type = COOL_NONE
 
   !> Filename with table of cooling coefficients
-  ! Some cooling tables are provided in the cooling/ subdirectory.
+  ! Several cooling tables are provided in the tables/ subdirectory.
   character(*), parameter :: cooling_file = "./cooling/CHIANTIMazotta.dat"
 
   !> Maximum *fractional* thermal energy loss allowed in a single cell
