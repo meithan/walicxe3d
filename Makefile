@@ -5,9 +5,10 @@
 # Name of the compiled binary
 PROGRAM= Walicxe3D
 
-# Non-MPI Compiler
+# Fortran compiler
 # Supported options: gfortran, ifort
-# For MPI, mpfi90 is used
+# For MPI, mpfi90 is used, but the correct underlying compiler must still be
+# selected here so that the appropriate compiler options are used
 #COMPILER= ifort
 COMPILER= gfortran
 
