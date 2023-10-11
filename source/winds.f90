@@ -69,7 +69,8 @@ module winds
     real :: by = 0.0
     real :: bz = 0.0
     real :: metal = 1.0
-    real :: bbox(6)
+    real :: bbox(6) = 0.0
+    logical :: bbox_init = .false.
   end type SphericalWindType
   !===============================
 
@@ -111,7 +112,7 @@ module winds
     real :: metal = 1.0
   end type PlaneWindType
   !===============================
-  
+
 contains
   
   ! ============================================
@@ -143,9 +144,9 @@ contains
     bID = localblocks(nb)
 
     ! Loop over all cells of the block
-    do k=nxmin,nxmax
+    do k=nzmin,nzmax
       do j=nymin,nymax
-        do i=nzmin,nzmax
+        do i=nxmin,nxmax
 
           ! Compute absolute cell position, de-scaled
           call cellPos (bID, i, j, k, x, y, z)
@@ -162,10 +163,6 @@ contains
             vy = wind%vinf*(y-wind%yc)/dist + wind%vy
             vz = wind%vinf*(z-wind%zc)/dist + wind%vz
             pres = dens/(wind%mu*AMU)*KB*wind%temp
-
-            ! DEBUG
-!            write(logu,*) dens, vx/1e5, vy/1e5, vz/1e5, pres
-            ! DEBUG
 
             ! Scale primitives
             primit(1) = dens/d_sc
@@ -220,14 +217,24 @@ contains
     logical :: intersects
     real :: bbox(6)
 
-    !write(logu,*) ""
+    write(logu,*) ""
     write(logu,'(1x,a)') "> Imposing spherical wind sources ..."
     write(logu,'(1x,a,i,a)') "There are ", num_winds, " wind sources"
 
-    ! Refine zones, compute bounding box and report parameters for all wind sources
-    if (it.eq.0) then
-      do i=1,num_winds
-        wind = winds_list(i)
+    ! Only once: refine zones, compute bounding box and report
+    ! parameters for all wind sources
+    do i=1,num_winds
+      wind = winds_list(i)
+      if (.not.wind%bbox_init) then
+        winds_list(i)%bbox(1) = wind%xc - wind%radius
+        winds_list(i)%bbox(2) = wind%xc + wind%radius
+        winds_list(i)%bbox(3) = wind%yc - wind%radius
+        winds_list(i)%bbox(4) = wind%yc + wind%radius
+        winds_list(i)%bbox(5) = wind%zc - wind%radius
+        winds_list(i)%bbox(6) = wind%zc + wind%radius
+        winds_list(i)%bbox_init = .true.
+      end if
+      if (it.eq.0) then
         write(logu,*)
         write(logu,*) "----------------------------"
         write(logu,'(1x,a,i)') "Source #", i
@@ -237,15 +244,10 @@ contains
         write(logu,'(1x,a,es12.5,a)') "rho(R) = ", wind%mdot/wind%vinf/wind%radius/wind%radius/(4.0*PI), " g/cm^3"
         write(logu,'(1x,a,es12.5,a)') "temp = ", wind%temp, " K"
         write(logu,'(1x,a,es12.5,1x,es12.5,1x,es12.5,a)') "Location: ", wind%xc/PC, wind%yc/PC, wind%zc/PC, " pc"
-        winds_list(i)%bbox(1) = wind%xc - wind%radius
-        winds_list(i)%bbox(2) = wind%xc + wind%radius
-        winds_list(i)%bbox(3) = wind%yc - wind%radius
-        winds_list(i)%bbox(4) = wind%yc + wind%radius
-        winds_list(i)%bbox(5) = wind%zc - wind%radius
-        winds_list(i)%bbox(6) = wind%zc + wind%radius
-        call refineZone (winds_list(i)%bbox, maxlev) 
-      end do
-    end if
+        write(logu,'(1x,a,f8.5,1x,f8.5,1x,f8.5,1x,f8.5,1x,f8.5,1x,f8.5,a)') "Bbox: ", winds_list(i)%bbox(1)/PC, winds_list(i)%bbox(2)/PC, winds_list(i)%bbox(3)/PC, winds_list(i)%bbox(4)/PC, winds_list(i)%bbox(5)/PC, winds_list(i)%bbox(6)/PC, " pc"
+        call refineZone (winds_list(i)%bbox, maxlev)
+      end if
+    end do
 
     ! Impose flow conditions, where applicable
     do nb=1,nbMaxProc
@@ -255,7 +257,7 @@ contains
         ! Iterate over wind sources
         do l=1,num_winds
            
-           wind = winds_list(l)
+          wind = winds_list(l)
 
           ! Check whether the wind bounding box intersects with the block
           call getBoundingBox(bID, bbox)
@@ -295,15 +297,25 @@ contains
     use globals
     implicit none
 
-    type(SphericalWindType), intent(in) :: wind
+    type(SphericalWindType), intent(inout) :: wind
     real, intent(inout) :: uvars(nbMaxProc, neqtot, &
                            nxmin:nxmax, nymin:nymax, nzmin:nzmax)
 
-    type(SphericalWindType), dimension(1) :: winds_list
+    type(SphericalWindType), dimension(1) :: winds_list_temp
 
-    winds_list(1) = wind
+    ! Compute wind bbox if needed
+    if (.not.wind%bbox_init) then
+      wind%bbox(1) = wind%xc - wind%radius
+      wind%bbox(2) = wind%xc + wind%radius
+      wind%bbox(3) = wind%yc - wind%radius
+      wind%bbox(4) = wind%yc + wind%radius
+      wind%bbox(5) = wind%zc - wind%radius
+      wind%bbox(6) = wind%zc + wind%radius
+      wind%bbox_init = .true.
+    end if
 
-    call imposeSphericalWindsList(1, winds_list, uvars)
+    winds_list_temp(1) = wind
+    call imposeSphericalWindsList(1, winds_list_temp, uvars)
 
   end subroutine imposeSphericalWind
 

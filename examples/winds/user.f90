@@ -77,8 +77,8 @@ module userconds
   ! your simulation, unless they are provided by an external module
 
   ! We declare the two wind parameters objects
-  type(spherical_wind_type) :: spherical_wind
-  type(plane_wind_type) :: plane_wind
+  type(SphericalWindType) :: spherical_wind
+  type(PlaneWindType) :: plane_wind
 
   ! ============================================
 
@@ -124,7 +124,7 @@ contains
 
     ! ============================================
 
-    ! First we fill in the wind parameters
+    ! First we fill in the stellar wind parameters
     spherical_wind%xc = 0.5 * PC
     spherical_wind%yc = 0.5 * PC
     spherical_wind%zc = 0.5 * PC
