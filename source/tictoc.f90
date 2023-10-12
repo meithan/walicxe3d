@@ -125,7 +125,6 @@ module tictoc
     character(len=30) :: buffer
 
     secs = toc(mark)
-    print *, mark, secs
     buffer = ftime(secs)
     nicetoc = buffer
     return
