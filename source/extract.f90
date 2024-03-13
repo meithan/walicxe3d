@@ -695,7 +695,7 @@ subroutine write2Dbin (outmap, nx, ny, outfname)
   write(*,'(2x,i0,a)') size(outmap), " values in array"
 
   unitout = 10
-  open (unit=unitout,file=outfname,status='replace',form='unformatted',&
+  open (unit=unitout, file=outfname, status='replace', access='stream', &
        iostat=istat)
 
   write(unitout) outmap
