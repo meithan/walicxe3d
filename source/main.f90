@@ -42,7 +42,7 @@ program Walicxe3D
   ! Initialize global arrays and variables
   call initmain ()
 
-  ! Initialize base grid, and refine it (cold start)
+  ! Initialize base grid (cold start)
   call basegrid ()
 
   ! Impose initial conditions (cold start) or load them from file (warm start)
@@ -52,7 +52,7 @@ program Walicxe3D
     call initflow ()
   end if
 
-  ! Distribute base load among all processors
+  ! Load balance initial state of simulation among all processors
   call loadBalance ()
 
   ! Update primitives

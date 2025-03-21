@@ -23,10 +23,9 @@
 
 !===============================================================================
 
-!> @brief Initializes root blocks and refines the mesh to prepare it for ICs
-!> @details This is a main-level routine. Calculates the mesh geometry
-!! (how many root blocks) and number of levels to meet the required resolution,
-!! and refines the IC zone.
+!> @brief Initializes the root blocks of the mesh to prepare it for ICs
+!> @details This is a main-level routine. Calculates the base mesh geometry
+!! (root blocks) and number of levels to meet the required resolution.
 subroutine basegrid ()
 
   use parameters
@@ -37,6 +36,7 @@ subroutine basegrid ()
   ! Local variables
   integer :: maxlevx, maxlevy, maxlevz, smalldim
   integer :: nb, bID, ilev, x, y, z
+  integer :: nb_glob, nb_per_rank, nb_rank_min, nb_rank_max
   integer(8) :: mark
   real :: smallsize
 
@@ -110,7 +110,7 @@ subroutine basegrid ()
   else
     write(logu,'(1x,a,i2,a,i2,a,i2)') "Grid geometry (root blocks): ", &
       nbrootx, " x ", nbrooty, " x ", nbrootz
-    write(logu,'(1x,a,i3)') "Number of root blocks: ", nbrootx*nbrooty*nbrootz
+    write(logu,'(1x,a,i7)') "Number of root blocks: ", nbrootx*nbrooty*nbrootz
     write(logu,'(1x,a,i2)') "Number of refinement levels: ", maxlev
   end if
 
@@ -159,14 +159,39 @@ subroutine basegrid ()
   if (.not.dowarm) then
   
     ! Activate root blocks and initialize block registry
+    write(logu,*) ""
     write(logu,'(1x,a)') "> Creating root blocks ..."
 
-    ! Calculate bID of root blocks and register them in master's block list
-    if (rank.eq.master) then
-      nb = 1
-      do z = 1,nbrootz
-        do y = 1,nbrooty
-          do x = 1,nbrootx
+    ! Determine which root blocks each rank must create
+    ! When the number of root blocks is less than the number of procs
+    ! (which is common) only some ranks will create root blocks
+    nb_per_rank = ceiling(real(nbrootx*nbrooty*nbrootz)/nProcs)
+    nb_rank_min = 1 + rank*nb_per_rank
+    nb_rank_max = (rank+1)*nb_per_rank
+
+    ! DEBUG
+    !write(logu,*) "nb_per_rank=", nb_per_rank
+    !write(logu,*) "nb_rank_min=", nb_rank_min
+    !write(logu,*) "nb_rank_max=", nb_rank_max
+
+    if (nb_per_rank.gt.nbMaxProc) then
+      write(logu,*)
+      write(logu,*) "ERROR: not enough memory to allocate root blocks!"
+      write(logu,*) "Increase RAM_per_proc"
+      call clean_abort (ERROR_INSUFICIENT_NBMAXPROC)
+    end if
+
+    ! Calculate bID of root blocks and register them in this rank's block list
+    nb_glob = 1
+    nb = 1
+    do z = 1,nbrootz
+      do y = 1,nbrooty
+        do x = 1,nbrootx
+
+          if (nb_glob.ge.nb_rank_min.and.nb_glob.le.nb_rank_max) then
+
+            !DEBUG
+            !write(logu,*) nb, nb_glob
 
             ! bID is sensitive to numbering order
             bID = 1+(x-1)+(y-1)*nbrootx+(z-1)*nbrootx*nbrooty
@@ -176,13 +201,18 @@ subroutine basegrid ()
 
             nb = nb + 1
             nbLocal = nbLocal + 1
+          
+          end if
 
-          end do
+          nb_glob = nb_glob + 1
+
         end do
       end do
-    end if
+    end do
 
-    ! Synchronize block lists
+    write(logu, '(1x,i0,1x,a)') nb-1, "root blocks created locally"
+
+    ! Synchronize block lists among ranks
     call syncBlockLists ()
 
   else
