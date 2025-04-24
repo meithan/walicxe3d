@@ -62,6 +62,14 @@ subroutine output (noutput)
 
   call tic(startmark)
 
+  ! Write parameters file on first output
+  if (noutput.eq.0) then
+    if (rank.eq.0) then
+      call writeParams ()
+    end if
+  end if
+
+  ! Write data and state files
   do p=0,nprocs-1
     if (rank.eq.p) then
 
@@ -176,7 +184,7 @@ end subroutine writeBin
 
 !===============================================================================
 
-!> @brief Dump state file in binary format (only one per output)
+!> @brief Write state file in binary format (only one per output)
 subroutine writeState (noutput)
 
   use parameters
@@ -222,8 +230,47 @@ subroutine writeState (noutput)
   write(logu,'(1x,a,i3,a)') "Succesfully wrote state file."
   write(logu,*) ""
 
-
 end subroutine writeState
+
+!===============================================================================
+
+!> @brief Write the simulations parameters file
+subroutine writeParams ()
+
+  use parameters
+  use globals
+  implicit none
+
+  character(128) :: filepath
+  integer :: unitout, istat
+
+  ! Generate file path
+  write(filepath,'(a)') trim(datadir) // "/" // "Params.dat"
+
+  write(logu,'(1x,a,a,a)') "Writing state file ", trim(filepath), " ..."
+
+  ! Open data file
+  unitout = 100
+  open (unit=unitout, file=filepath, status='replace', iostat=istat)
+  if (istat.ne.0) then
+    write(logu,'(a,a,a)') "Could not open the file '", trim(filepath), "' !"
+    write(logu,'(a,a,a)') "Does the datadir '", trim(datadir), "' exist?"
+    close(unitout)
+    call clean_abort (ERROR_OUTPUT_FILE_OPEN)
+  end if
+
+  ! Write simulation parameters
+  write(unitout,'(i0,1x,i0,1x,i0,1x,i0)') nprocs, neqtot, npassive, firstpas
+  write(unitout,'(es22.15,1x,es22.15,1x,es22.15)') xphystot, yphystot, zphystot
+  write(unitout,'(i0,1x,i0,1x,i0,1x,i0,1x,i0,1x,i0,1x,i0)') nbrootx, nbrooty, nbrootz, maxlev, ncells_x, ncells_y, ncells_z
+  write(unitout,'(es22.15,1x,es22.15,1x,es22.15,1x,es22.15)') gamma, mu0, mui, ion_thres
+  write(unitout,'(es22.15,1x,es22.15,1x,es22.15)') l_sc, d_sc, v_sc
+
+  close(unitout)
+  write(logu,'(1x,a,i3,a)') "Succesfully wrote parameters file."
+  write(logu,*) ""
+  
+end subroutine writeParams
 
 !===============================================================================
 
@@ -1002,7 +1049,4 @@ subroutine write2DMapVTK (outmap, nx, ny, outfname)
 
 end subroutine write2DMapVTK
 
-
 !===============================================================================
-
-
