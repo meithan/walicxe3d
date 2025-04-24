@@ -214,7 +214,7 @@ module parameters
   ! At least one is needed if metallicity-dependent cooling is to be used
   integer, parameter :: npassive = 0
 
-  !> Courant-Friedrichs-Lewis parameter (0 < CFL < 1.0)
+  !> Courant-Friedrichs-Lewy parameter (0 < CFL < 1.0)
   real, parameter :: CFL = 0.4
 
   !> Artificial viscosity

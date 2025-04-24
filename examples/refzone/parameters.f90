@@ -217,7 +217,7 @@ module parameters
   !> Number of extra passive scalars
   integer, parameter :: npassive = 1
 
-  !> Courant-Friedrichs-Lewis parameter (0 < CFL < 1.0)
+  !> Courant-Friedrichs-Lewy parameter (0 < CFL < 1.0)
   real, parameter :: CFL = 0.4
 
   !> Artificial viscosity
