@@ -85,6 +85,7 @@ OBJECTS_COLDENS= \
 
 # List of modules and objects to compile the Data Extractor facility
 OBJECTS_EXTRACT= \
+./source/constants.o \
 ./source/utils.o \
 ./source/extract.o
 

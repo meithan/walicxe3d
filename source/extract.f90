@@ -26,18 +26,8 @@
 !> @brief Extracts 2D cuts (in VTK format) from 3D data files
 program extract
 
+  use constants
   implicit none
-  
-  ! Named constants
-  real, parameter :: AXIS_X = 1
-  real, parameter :: AXIS_Y = 2
-  real, parameter :: AXIS_Z = 3
-
-  ! Constants (7 significant digits)
-  real, parameter :: PC  = 3.085680E+18
-  real, parameter :: AMU = 1.660539E-24
-  real, parameter :: KB  = 1.380658E-16
-  real, parameter :: PI  = 3.141593
   
   ! ============================================================================
   ! PROGRAM CONFIGURATION
@@ -45,80 +35,79 @@ program extract
 
   ! Output range to process
   integer, parameter :: noutmin = 0
-  integer, parameter :: noutmax = 20
+  integer, parameter :: noutmax = 0
 
   ! Axis and location of cut
-  ! cut_axis must be one of AXIS_X, AXIS_Y, AXIS_Z.
-  ! cut_location must be given in physical units.
+  ! cut_axis must be one of AXIS_X, AXIS_Y, AXIS_Z
+  ! cut_location must be given in physical units (cgs)
   integer, parameter :: cut_axis = AXIS_Y
-  real, parameter :: cut_location = 29.9*PC
+  real, parameter :: cut_location = 0.5*PC
 
-  ! Filenames
-  character(*), parameter :: datadir = "./output/"     ! Path to data dir
-  character(*), parameter :: blockstpl = "BlocksXXX.YYYY"  ! Data files template
-  character(*), parameter :: outmaptpl = "CutD.YYYY"  ! Output file template
+  ! Path to data dir and name of parameters file (must be in the datadir)
+  character(*), parameter :: datadir =      ! Path to data directory
+  character(*), parameter :: params_file = "Params.dat"    ! Simulation parameters file
 
   ! Output format
-  logical, parameter :: output_vtk = .true.   ! VTK output
+  logical, parameter :: output_vtk = .false.   ! VTK output
   logical, parameter :: output_bin = .true.   ! Direct binary output
-
-  ! Physical box sizes (cgs)
-  real, parameter :: xsize = 60*PC
-  real, parameter :: ysize = 60*PC
-  real, parameter :: zsize = 60*PC
-
-  ! Mesh parameters
-  integer, parameter :: nbrootx = 1
-  integer, parameter :: nbrooty = 1
-  integer, parameter :: nbrootz = 1
-  integer, parameter :: maxlev = 6
-  integer, parameter :: ncells_x = 16
-  integer, parameter :: ncells_y = 16
-  integer, parameter :: ncells_z = 16
-
-  ! Simulation parameters
-  integer, parameter :: nprocs = 24
-  integer, parameter :: neqtot = 9
-
-  ! Gas parameters
-  real, parameter :: gamma = 5.0/3.0
-  real, parameter :: mu0 = 1.3
-  real, parameter :: mui = 0.61
-  real, parameter :: ion_thres = 10000.0 
-  real, parameter :: CV = 1.0/(gamma-1.0) 
-
-  ! Unit scalings
-  real, parameter :: l_sc = 1.0*PC          !< length scale (cm)
-  real, parameter :: d_sc = 1.0*1.3*AMU     !< density scale (g cm^-3)
-  real, parameter :: v_sc = 3.2649e05       !< velocity scale (cm s^-1)
-  real, parameter :: p_sc = d_sc*v_sc**2
-  real, parameter :: e_sc = p_sc
-  real, parameter :: t_sc = l_sc/v_sc
 
   ! ============================================================================
   !                    NO NEED TO MODIFY BELOW THIS POINT
   ! ============================================================================
 
-#ifdef PASBP
-  integer, parameter :: npas = neqtot - 8
-  integer, parameter :: firstpas = 9
-#else
-  integer, parameter :: npas = neqtot - 5
-  integer, parameter :: firstpas = 6
-#endif
-
+  integer :: nprocs, neqtot, npassive, firstpas
+  real :: xphystot, yphystot, zphystot
+  integer :: nbrootx, nbrooty, nbrootz, maxlev, ncells_x, ncells_y,  ncells_z
+  real :: gamma, mu0, mui, ion_thres, CV
+  real :: l_sc, d_sc, v_sc, p_sc, e_sc, t_sc
+  
   integer :: ilev, bID, blocksused, istat, nb, p
   integer :: i, j, k, i1, j1, k1, ip, jp, i_off, j_off, i2, j2
   integer :: mesh(7), unitin, nblocks, plane, nout
   integer :: nxmap, nymap, nx, ny, cell_count
-  real :: dx(maxlev), pvars(neqtot), uvars(neqtot)
-  character(256) :: filename  
+  character(256) :: filename, filepath
 
   real, allocatable :: block(:,:,:,:)
   real, allocatable :: outmap(:,:,:)
+  real, allocatable :: dx(:), pvars(:), uvars(:)
+  
+  ! Filename templates
+  character(*), parameter :: tpl_blocks = "BlocksXXX.YYYY"  ! Data files template
+  character(*), parameter :: tpl_state = "State.YYYY.dat"   ! State files template
+  character(*), parameter :: tpl_outmap = "CutD.YYYY"  ! Output file template
+
+  ! Uncomment this section, and comment parameters noutmin and noutmax above,
+  ! to instead read these two params as command-line arguments
+!  integer :: noutmin, noutmax
+!  character(len=32) :: arg
+!  call get_command_argument(1, arg)
+!  read(arg, '(I10)') noutmin
+!  call get_command_argument(2, arg)
+!  read(arg, '(I10)') noutmax
 
   ! ====================================================
-  
+
+  ! Read simulation parameters from file
+  write(filepath, "(a)") datadir // "/" // params_file
+  open (unit=10, file=filepath, status='old', access='stream', form='formatted', iostat=istat)
+  read(10,*) nprocs, neqtot, npassive, firstpas
+  read(10,*) xphystot, yphystot, zphystot
+  read(10,*) nbrootx, nbrooty, nbrootz, maxlev, ncells_x, ncells_y, ncells_z
+  read(10,*) gamma, mu0, mui, ion_thres
+  read(10,*) l_sc, d_sc, v_sc
+  close(10)
+  print*, nprocs, neqtot, npassive, firstpas
+  print*, xphystot, yphystot, zphystot
+  print*, nbrootx, nbrooty, nbrootz, maxlev, ncells_x, ncells_y, ncells_z
+  print*, gamma, mu0, mui, ion_thres
+  print*, l_sc, d_sc, v_sc
+
+  ! Derived parameters
+  CV = 1.0/(gamma-1.0)
+  p_sc = d_sc*v_sc**2
+  e_sc = p_sc
+  t_sc = l_sc/v_sc
+      
   ! Allocate output map
   if (cut_axis.eq.AXIS_X) then
     nxmap = nbrooty*2**(maxlev-1)*ncells_y
@@ -135,9 +124,14 @@ program extract
   ! Allocate data array for one block
   allocate( block(neqtot,ncells_x,ncells_y,ncells_z) )
 
+  ! Allocate other variables
+  allocate(dx(maxlev))
+  allocate(pvars(neqtot))
+  allocate(uvars(neqtot))
+
   ! Grid spacings - assumed EQUAL for all dimensions
   do ilev=1,maxlev
-    dx(ilev) = xsize/(ncells_x*nbrootx*2**(ilev-1))
+    dx(ilev) = xphystot/(ncells_x*nbrootx*2**(ilev-1))
   end do
 
   ! Pack mesh parameters
@@ -163,7 +157,7 @@ program extract
   do p=0,nprocs-1
 
     ! Generate filename
-    call genfname (p, nout, datadir, blockstpl, ".bin", filename)
+    call genfname (p, nout, datadir, tpl_blocks, ".bin", filename)
 
     ! Open data file
     write(*,'(1x,a,a,a)') "Openinig data file '", trim(filename), "' ..."
@@ -257,7 +251,7 @@ program extract
 !                write(*,'(i0,1x,i0)') i2, j2
                 ! Calculate and de-scale primitives
                 uvars(:) = block(:,i,j,k)
-                call flow2prim (uvars, pvars)
+                call flow2prim (neqtot, uvars, pvars)
                 pvars(1) = pvars(1)*d_sc
                 pvars(2) = pvars(2)*v_sc
                 pvars(3) = pvars(3)*v_sc
@@ -283,6 +277,10 @@ program extract
   write(*,*) "Done extracting 2D cut."
   write(*,*) "Total cells copied:", cell_count
 
+  if (cell_count < nxmap*nymap) then
+    write(*,*) "Warning: less cells copied than size of map!"
+  end if
+
   write(*,*) ""
   write(*,'(1x,a)') "Range of values:"
   write(*,'(1x,a,es10.3,1x,es10.3)') "Density: ", &
@@ -293,16 +291,16 @@ program extract
   ! Write output map to disk
   if (output_vtk) then
     write(*,*) ""
-    call genfname (0, nout, datadir, outmaptpl, ".vtk", filename)
+    call genfname (0, nout, datadir, tpl_outmap, ".vtk", filename)
     write(*,*) "Writing output map to VTK file ", trim(filename)
-    call write2DVTK (outmap, nxmap, nymap, filename)
+    call write2DVTK (outmap, neqtot, nxmap, nymap, filename)
   end if
 
   if (output_bin) then
     write(*,*) ""
-    call genfname (0, nout, datadir, outmaptpl, ".bin", filename)
+    call genfname (0, nout, datadir, tpl_outmap, ".bin", filename)
     write(*,*) "Writing output map to BIN file ", trim(filename)
-    call write2Dbin (outmap, nxmap, nymap, filename)
+    call write2Dbin (outmap, neqtot, nxmap, nymap, filename)
   end if
 
   write(*,*) ""
@@ -373,12 +371,12 @@ subroutine bounds(bID, mesh, xl, xh, yl, yh, zl, zh)
   call meshlevel (bID, mesh, ilev)
   call bcoords(bID, mesh, bx, by, bz)
 
-  xl = (bx-1)*xsize/(nbrootx*2**(ilev-1))
-  xh = bx*xsize/(nbrootx*2**(ilev-1))
-  yl = (by-1)*ysize/(nbrooty*2**(ilev-1))
-  yh = by*xsize/(nbrooty*2**(ilev-1))
-  zl = (bz-1)*zsize/(nbrootz*2**(ilev-1))
-  zh = bz*zsize/(nbrootz*2**(ilev-1))
+  xl = (bx-1)*xphystot/(nbrootx*2**(ilev-1))
+  xh = bx*xphystot/(nbrootx*2**(ilev-1))
+  yl = (by-1)*yphystot/(nbrooty*2**(ilev-1))
+  yh = by*yphystot/(nbrooty*2**(ilev-1))
+  zl = (bz-1)*zphystot/(nbrootz*2**(ilev-1))
+  zh = bz*zphystot/(nbrootz*2**(ilev-1))
 
   return
 
@@ -533,11 +531,11 @@ end subroutine absCoords
 !===============================================================================
 
 !> @brief Visit-compatible binary VTK data files (2D)
-subroutine write2DVTK (outmap, nx, ny, outfname)
+subroutine write2DVTK (outmap, neqtot, nx, ny, outfname)
 
   implicit none
 
-  integer, intent(in) :: nx, ny
+  integer, intent(in) :: neqtot, nx, ny
   real, intent(in) :: outmap(neqtot,nx,ny)
   character(*), intent(in) :: outfname
 
@@ -611,12 +609,12 @@ subroutine write2DVTK (outmap, nx, ny, outfname)
   write(unitout) trim(cbuffer), lf
   do j=1,ny
     do i=1,nx
-      call calcTemp (outmap(:,i,j), temp)
+      call calcTemp (neqtot, outmap(:,i,j), temp)
       xx = temp
       write(unitout) xx
     end do
   end do
-  write(unitout) lf  
+  write(unitout) lf
 
   ! VELOCITY
   write(*,'(1x,a)') " Writing Velocity components ..."
@@ -638,8 +636,8 @@ subroutine write2DVTK (outmap, nx, ny, outfname)
   end do
 
   ! PASSIVE SCALARS
-  if (npas.ge.1) then
-    do ipas=1,npas
+  if (npassive.ge.1) then
+    do ipas=1,npassive
       write(*,'(1x,a,i0,a)') " Writing Passive Scalar ",ipas," ..."
       write(cbuffer,'(a,i0,a)')  "SCALARS pas",ipas," float 1"
       write(unitout) trim(cbuffer), lf
@@ -683,9 +681,9 @@ end subroutine write2DVTK
 
 !===============================================================================
 
-subroutine write2Dbin (outmap, nx, ny, outfname)
+subroutine write2Dbin (outmap, neqtot, nx, ny, outfname)
 
-  integer, intent(in) :: nx, ny
+  integer, intent(in) :: neqtot, nx, ny
   real, intent(in) :: outmap(neqtot,nx,ny)
   character(*), intent(in) :: outfname
 
@@ -695,7 +693,7 @@ subroutine write2Dbin (outmap, nx, ny, outfname)
   write(*,'(2x,i0,a)') size(outmap), " values in array"
 
   unitout = 10
-  open (unit=unitout, file=outfname, status='replace', access='stream', &
+  open (unit=unitout,file=outfname,status='replace',access='stream',&
        iostat=istat)
 
   write(unitout) outmap
@@ -708,10 +706,11 @@ end subroutine write2Dbin
 !===============================================================================
 
 ! Calculates temperature from primitives, in CGS
-subroutine calcTemp (pvars, temp)
+subroutine calcTemp (neqtot, pvars, temp)
 
   implicit none
 
+  integer, intent(in) :: neqtot
   real, intent(in) :: pvars(neqtot)
   real, intent(out) :: temp
 
@@ -732,10 +731,11 @@ end subroutine calcTemp
 
 !===============================================================================
 
-subroutine flow2prim (uvars, pvars)
+subroutine flow2prim (neqtot, uvars, pvars)
 
   implicit none
 
+  integer, intent(in) :: neqtot
   real, intent(in) :: uvars(neqtot)
   real, intent(out) :: pvars(neqtot)
 
