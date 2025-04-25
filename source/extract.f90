@@ -60,6 +60,7 @@ program extract
   integer :: nbrootx, nbrooty, nbrootz, maxlev, ncells_x, ncells_y,  ncells_z
   real :: gamma, mu0, mui, ion_thres, CV
   real :: l_sc, d_sc, v_sc, p_sc, e_sc, t_sc
+  integer :: units_type
   
   integer :: ilev, bID, blocksused, istat, nb, p
   integer :: i, j, k, i1, j1, k1, ip, jp, i_off, j_off, i2, j2
@@ -67,7 +68,7 @@ program extract
   integer :: nxmap, nymap, nx, ny, cell_count
   character(256) :: filename, filepath
 
-  real, allocatable :: block(:,:,:,:)
+  real, allocatable :: block_data(:,:,:,:)
   real, allocatable :: outmap(:,:,:)
   real, allocatable :: dx(:), pvars(:), uvars(:)
   
@@ -94,13 +95,13 @@ program extract
   read(10,*) xphystot, yphystot, zphystot
   read(10,*) nbrootx, nbrooty, nbrootz, maxlev, ncells_x, ncells_y, ncells_z
   read(10,*) gamma, mu0, mui, ion_thres
-  read(10,*) l_sc, d_sc, v_sc
+  read(10,*) l_sc, d_sc, v_sc, units_type
   close(10)
-  print*, nprocs, neqtot, npassive, firstpas
-  print*, xphystot, yphystot, zphystot
-  print*, nbrootx, nbrooty, nbrootz, maxlev, ncells_x, ncells_y, ncells_z
-  print*, gamma, mu0, mui, ion_thres
-  print*, l_sc, d_sc, v_sc
+!  print*, nprocs, neqtot, npassive, firstpas
+!  print*, xphystot, yphystot, zphystot
+!  print*, nbrootx, nbrooty, nbrootz, maxlev, ncells_x, ncells_y, ncells_z
+!  print*, gamma, mu0, mui, ion_thres
+!  print*, l_sc, d_sc, v_sc
 
   ! Derived parameters
   CV = 1.0/(gamma-1.0)
@@ -122,7 +123,7 @@ program extract
   allocate( outmap(neqtot,nxmap,nymap) )
 
   ! Allocate data array for one block
-  allocate( block(neqtot,ncells_x,ncells_y,ncells_z) )
+  allocate( block_data(neqtot,ncells_x,ncells_y,ncells_z) )
 
   ! Allocate other variables
   allocate(dx(maxlev))
@@ -148,7 +149,7 @@ program extract
   do nout=noutmin,noutmax
 
   ! Reset arrays
-  block(:,:,:,:) = 0.0
+  block_data(:,:,:,:) = 0.0
   outmap(:,:,:) = 0.0
 
   cell_count = 0
@@ -180,7 +181,7 @@ program extract
 
       ! Read bID and determine if block intersecs cut plane
       read (unitin) bID
-      read (unitin) block    
+      read (unitin) block_data
       call meshlevel (bID, mesh, ilev)        
       call getCellPlane (bID, mesh, plane)
       
@@ -249,14 +250,20 @@ program extract
                 j2 = j1 + j_off
 
 !                write(*,'(i0,1x,i0)') i2, j2
-                ! Calculate and de-scale primitives
-                uvars(:) = block(:,i,j,k)
+                ! Calculate primitives
+                uvars(:) = block_data(:,i,j,k)
                 call flow2prim (neqtot, uvars, pvars)
-                pvars(1) = pvars(1)*d_sc
-                pvars(2) = pvars(2)*v_sc
-                pvars(3) = pvars(3)*v_sc
-                pvars(4) = pvars(4)*v_sc
-                pvars(5) = pvars(5)*p_sc
+
+                ! If UNITS_CODE, de-scale to physical (cgs) units
+                if (units_type == CODE_UNITS) then
+                  pvars(1) = pvars(1)*d_sc
+                  pvars(2) = pvars(2)*v_sc
+                  pvars(3) = pvars(3)*v_sc
+                  pvars(4) = pvars(4)*v_sc
+                  pvars(5) = pvars(5)*p_sc
+                end if
+
+                ! Copy to outmap cell
                 outmap(:,i2,j2) = pvars(:)
                 cell_count = cell_count + 1
 
@@ -284,9 +291,9 @@ program extract
   write(*,*) ""
   write(*,'(1x,a)') "Range of values:"
   write(*,'(1x,a,es10.3,1x,es10.3)') "Density: ", &
-    minval(outmap(1,:,:))*d_sc, maxval(outmap(1,:,:))*d_sc
+    minval(outmap(1,:,:)), maxval(outmap(1,:,:))
   write(*,'(1x,a,es10.3,1x,es10.3)') "Pressure: ", &
-    minval(outmap(5,:,:))*p_sc, maxval(outmap(5,:,:))*p_sc
+    minval(outmap(5,:,:)), maxval(outmap(5,:,:))
 
   ! Write output map to disk
   if (output_vtk) then
@@ -714,11 +721,6 @@ subroutine calcTemp (neqtot, pvars, temp)
   real, intent(in) :: pvars(neqtot)
   real, intent(out) :: temp
 
-!  temp = pvars(5)/pvars(1)*(mu0*AMU*p_sc/d_sc/KB)
-
-!  if (temp.gt.ion_thres) then
-!    temp = pvars(5)/pvars(1)*(mui*AMU*p_sc/d_sc/KB)
-!  end if
   temp = pvars(5)/pvars(1)*(mu0*AMU/KB)
 
   if (temp.gt.ion_thres) then

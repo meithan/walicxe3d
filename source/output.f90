@@ -264,7 +264,7 @@ subroutine writeParams ()
   write(unitout,'(es22.15,1x,es22.15,1x,es22.15)') xphystot, yphystot, zphystot
   write(unitout,'(i0,1x,i0,1x,i0,1x,i0,1x,i0,1x,i0,1x,i0)') nbrootx, nbrooty, nbrootz, maxlev, ncells_x, ncells_y, ncells_z
   write(unitout,'(es22.15,1x,es22.15,1x,es22.15,1x,es22.15)') gamma, mu0, mui, ion_thres
-  write(unitout,'(es22.15,1x,es22.15,1x,es22.15)') l_sc, d_sc, v_sc
+  write(unitout,'(es22.15,1x,es22.15,1x,es22.15,1x,i0)') l_sc, d_sc, v_sc, units_type
 
   close(unitout)
   write(logu,'(1x,a,i3,a)') "Succesfully wrote parameters file."
