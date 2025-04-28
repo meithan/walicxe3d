@@ -338,6 +338,7 @@ contains
                            nxmin:nxmax, nymin:nymax, nzmin:nzmax)
 
     integer :: nb, bID, i, j, k, plane
+    integer :: i1, i2, j1, j2, k1, k2, dir
     real :: dens, vx, vy, vz, pres, temp, vel, mu, metal
     real :: primit(neqtot)
     integer :: neighType
@@ -349,25 +350,53 @@ contains
     ! Unpack wind source parameters
     plane = wind_params%plane
     dens  = wind_params%rho
-    vel   = wind_params%vel
+    vel   = abs(wind_params%vel)
     temp  = wind_params%temp
     mu    = wind_params%mu
     metal = wind_params%metal
 
-    ! Impose flow conditions on ghost cells of TOP simulation boundary
+    ! Set appropriate variables depending on selected plane boundary
+    i1 = nxmin
+    i2 = nxmax
+    j1 = nymin
+    j2 = nymax
+    k1 = nzmin
+    k2 = nzmax
+    select case(plane)
+      case (PLANE_LEFT)
+        i2 = 0
+        dir = LEFT
+      case (PLANE_RIGHT)
+        i1 = ncells_x + 1
+        dir = RIGHT
+      case (PLANE_FRONT)
+        j2 = 0
+        dir = FRONT
+      case (PLANE_BACK)
+        j1 = ncells_y + 1
+        dir = BACK
+      case (PLANE_BOTTOM)
+        k2 = 0
+        dir = BOTTOM
+      case (PLANE_TOP)
+        k1 = ncells_z + 1
+        dir = TOP
+    end select
+
+    ! Impose flow conditions on ghost cells
     do nb=1,nbMaxProc
       bID = localBlocks(nb)
       if (bID.ne.-1) then
 
-        ! Determine if this block is at the TOP boundary
-        call neighbors (bID, TOP, neighType, neighList)
+        ! Determine if this block is at the selected boundary
+        call neighbors (bID, dir, neighType, neighList)
 
-        ! If so, set TOP *ghost* cells
+        ! If so, modify the ghost cells along that boundary
         if (neighType.eq.NEIGH_BOUNDARY) then
 
-          do i=nxmin,nxmax
-            do j=nymin,nymax
-              do k=ncells_z,nzmax
+          do i=i1,i2
+            do j=j1,j2
+              do k=k1,k2
 
                 ! Compute velocity components and pressure
                 vx = 0.0
